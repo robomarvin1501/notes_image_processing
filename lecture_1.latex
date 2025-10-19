@@ -1,0 +1,253 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 1}
+\author{Gidon Rosalki}
+\date{2025-10-19}
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}%
+\label{sec:Introduction}
+Given a scene, a camera turns it into pictures / video, which may then undergo computation resulting in better pictures.
+We may also gain information from the scene through computer vision, perform video sound analysis, and use them for self
+driving AI. 
+
+There are 2 main areas to computer science. There is classical CS, where we invent algorithms, and consider their
+complexity, algorithms, computer graphics, databases, architectures, cryptography, languages and compilers, and
+networking. This overlaps in \enquote{cyber}  with the field of learning from data, and AI, which includes computer
+vision (this course), speech analysis, natural language, deep learning. Here stage 1 is preprocessing and tokens, and
+stage 2 is the deep learning. An example of AI classification is facial recognition. This will not be discussed in this
+course. 
+
+We state that in nature, vision = intelligence = movement. Only intelligent organisms that move can see. Bacteria and
+plants do not see. Visual recognition begins at an early age, with babies being able to track their mothers. Most of the
+of the human brain is involved in visual processing. We see great variety in this in the real world. Most predators have
+eyes directed forwards, improving depth perception, and aiding their ability to hunt. Most prey have to be able to
+escape predators from any direction, and so have more sideways directed eyes, to improve their ability to see predators
+in their peripheral vision. 
+
+Image processing has the application of image enhancement, such as taking a photo from a hazy day, and removing the
+haze from the picture. Additionally, to can be used to increase the dynamic range of an image, allowing us to see the
+details that would otherwise be obscured in darkness.
+
+An example of a use that was a previous exercise for this course was taking a series of pictures that together form a
+panorama, and turning it into the 3D image.
+
+\subsection{Computer vision}%
+\label{sub:Computer vision}
+Computer vision started around 1964, but nothing worked for 50 years. Around 2014, the introduction of neural networks
+allowed the beginning of more effective research. Computer vision products are now commonly used: \begin{itemize}
+    \item Face detection is included in every camera 
+    \item Face recognition in Facebook, Google, Passport control 
+    \item Autonomous driving 
+    \item Medical diagnoses  
+    \item OCR 
+    \item Image and video editing and generation
+\end{itemize}
+
+\subsection{Grade}%
+\label{sub:Grade}
+3 exams throughout the semester, of 1 hour, containing 2 questions. The final average is normalised to 83\%-85\%. Of the
+6 questions across these exams, the best 5 are taken. There are 5 individual programming homeworks. The final grade is
+comprised of 25\% for each exam, 23\% from the homeworks, and 2\% attendance.
+
+\subsection{Image formation}%
+\label{sub:Image formation}
+\subsubsection{Luminance}
+Light is emitted by light sources, and reflected from objects. The reflected light is sensed by an eye, or camera. We
+may calculate the intensity by multiplying together the reflectance by the emitted light: \[
+    I = L \cdot r
+\]
+
+\subsubsection{Reflectance}
+We have 2 main types of reflectance, shining (specular) and matt (diffuse). Under specular reflection, a ray is
+reflected from the surface with the same angle to the normal. Angle of incidence is equal to angle of reflection.
+However, on a matt surface, given a light ray incident at an angle, all angles will have the same chance of reflection.
+
+\subsection{The eye}%
+\label{sub:The eye}
+\begin{wrapfigure}{r}{0.3\textwidth}
+    \center
+    \includegraphics[width=\linewidth]{lecture_1_visible_frequencies}
+    \caption{Visible frequencies}
+\end{wrapfigure}
+Light passes through the iris, until it hits the retina at the back of the eye (different from a typical image sensor,
+since it is on a ball). The retina is formed of around $10^8$ rods, which can see black and white, $10^7$ cones for RGB
+colour, and $10^4$ nerves. There is therefore about a $1:10^4$ reduction. This reduction takes place since if we have
+$10^8$ nerves connecting to the eye, we would need a metre of space for all the nerves to fit. Rods are very sensitive,
+even in low light, whereas cones are more for bright light. We can only see a small amount of the electromagnetic
+spectrum, from around $350nm - 780nm$. Within there, the blue cones fire at around 420nm (high frequency), the rods at
+498nm, green at 534nm, and finally red at 564nm (low frequency).
+
+\subsection{Image digitisation}%
+\label{sub:Image digitisation}
+There are 3 stages to image digitisation: \begin{enumerate}
+    \item Transforming the 3D world into a 2D image. This involves perspective projection (optics, continuous)
+    \item Sampling the image plane with a finite number of pixels 
+    \item Quantising the colour / grey level with a finite number of colours (such as 8 bits per colour)
+\end{enumerate}
+
+The simplest form of camera is a pinhole camera, or camera obscura (latin for dark room). If we place an image plane in
+front of an object, no image is generated. To create an image, each image location should get a ray from a
+\textbf{single} point in the scene. This is done by blocking all the rays except one by placing a wall with a very small
+hole in it in front of the image plane. Since very little light passes through, we need to place the image plane in a
+dark room, such that the low level of light passing through the pinhole is sufficient to be visible.
+
+\subsubsection{Perspective projection}
+When transforming the 3D world into a 2D image, we use continuous perspective projection, where all rays pass through
+one focal point, and where they land on the image plane is where the point is stored. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_1_perspective_projection}
+    \caption{Perspective projection (f is the focal length)}
+\end{figure}
+
+In order to transform the world to camera we have the following equations: \begin{align*}
+    x &= \frac{f}{Z} X \\ 
+    y &= \frac{f}{Z} Y
+\end{align*}
+
+Where $X$ is parallel to $x$, $Y$ to $y$, and both use the same units. In the general case, there is a transformation
+matrix between world axis and camera axis.
+
+\subsection{Cameras}%
+\label{sub:Cameras}
+In 1975, Bruce Bayer suggested the colour filter array used in most digital camera. $\frac{1}{4}$ pixels detect red;
+$\frac{1}{4}$ pixels blue; $\frac{1}{2}$ pixels green. Other colours are invented through demosaicing, averages, and
+other proprietary methods.
+
+There are a few different colour spaces. In typical camera / projector we use an additive colour space of RGB. We add
+together different amounts of red, green, and blue to create new colours. However, printers use the CMYK colour space,
+since they print with ink which \textit{absorbs} colours instead, and is thus a subtractive colour space. Mixing these
+colours together will subtract out colours, resulting in RGB and black. However, to save on ink, most printers include a
+special black ink cartridge (K).
+
+The first TVs were in black and white. When transferring to colour TV, since all the TVs at the time were in black and
+white, they created a transmission standard which could be understood by both colour TVs, and black and white. \[
+    \begin{bmatrix}
+        Y \\
+        I \\
+        Q 
+    \end{bmatrix} = \begin{bmatrix}
+        0.299 & 0.587 & 0.114 \\
+        0.596 & -0.275 & -0.321 \\
+        0.212 & -0.523 & 0.311
+    \end{bmatrix} \begin{bmatrix}
+        R \\
+        G \\
+        B
+    \end{bmatrix}
+\]
+Where Y is the luminance. In Israel, it was decided that colour TV was wrong, and so would noise the channels of I and
+Q. Immediately, enterprising people created denoisers, which everyone promptly bought to be able to see colour TV. 
+
+
+\subsection{Point operations}%
+\label{sub:Point operations}
+Given an image, we can generate new pixel values $g \left(x, y\right)$ based on the input pixel value $f \left(x,
+y\right)$. For example, \[
+
+    g \left(x, y\right) = 255 - f \left(x, y\right)
+\]
+This takes the negative of an image. This operation depends only on the value of the pixel, and not surrounding pixels,
+or the location. In general: \begin{align*}
+    g \left(x, y\right) &= T \left(f \left(x, y\right)\right) \\ 
+    T \left(u\right) &= 255 - u \implies \text{Negative}  \\ 
+    T \left(u\right) &= \begin{cases}
+        0, &\text{ if }u \leq 127\
+        1, &\text{ if }u > 127\
+    \end{cases} \implies \text{Threshold} 
+    
+\end{align*}
+
+\subsubsection{Gamma correction}
+Gamma correction is used to overcome non linear responses of cameras, displays, and eyes. \[
+    T \left(u\right) = \text{Max} \cdot \left(\frac{u}{\text{Max} } \right)^\gamma
+\]
+This is also achieved through lookup tables. 
+
+\subsubsection{Common histogram}
+Images can give us histograms with the distribution of different colours in the picture.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_1_common_histogram}
+    \caption{Common histogram}
+\end{figure}
+
+The histogram is invariant to pixel locations. Different pictures can give the same histogram. Consider how many
+pictures there are that have all the colour split into two discrete locations in the graph. Typically, the histograms
+will have very small amounts at either end, with most of the frequencies in the middle. When there is nothing in
+the higher, and lots in the lower, we know the image is probably under exposed, and if there is lots in the upper
+frequencies, it is probably over exposed. 
+
+Consider what JPEG does to the histogram: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_1_jpeg_effects}
+    \caption{JPEG effects}
+\end{figure}
+It has created a lot of new colours, in trying to condense down the lines of the image.
+
+These histograms can be useful for cut detection in videos. Similar images will have similar histograms, especially when
+the camera is recording at 24fps, the scene cannot change that much from frame to frame. However, the histogram will
+change significantly with a cut, so computing the distance between the colour histogram of successive frames can detect
+these cuts. 
+
+The vector distance between histograms is simply the absolute sum of the difference between the buckets. However, two
+very different sets of histograms can have the same vector distance, even if one set is much closer to its pair than the
+other. In this case we may use the distance between \textbf{cumulative} histograms. So, if we take a histogram where all
+the pixels are 1, one where they are all 2, and one where they are all 5, the cumulative distance will show that the
+first two are much closer together, then either of them are to the last. 
+
+We may use histogram equalisation, which expands the histogram to the entire space fo the image to gain a lot more
+contrast in a given image: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_1_histogram_normalisation}
+    \caption{Histogram normalisation}
+\end{figure}
+
+In order to compute the histogram equalisation, we compute the cumulative histogram $S \left(i\right)$ from the
+histogram $h \left(i\right)$, and change every original grey level $i$ to $S \left(i\right)$. Next we perform a linear
+\textit{stretch} the new grey levels back to $\left[0, \dots, k\right]$. Given $m$ the lowest grey level in the input
+image, and $q$ the highest grey level, we map $S \left(m\right) \to 0$ and $S \left(q\right) \to K$. We wind up with the
+computation: \[
+    i \implies K \frac{S \left(i\right) - S \left(m\right)}{S \left(q\right) - S \left(m\right)} 
+\]
+
+\end{document}
