@@ -16,6 +16,7 @@
 \usepackage{bbm}
 \usepackage{wrapfig}
 \usepackage[autostyle=true]{csquotes}
+\usepackage{listings}
 \graphicspath{ {./images/} }
 \usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
 
@@ -47,15 +48,15 @@
     \item Images 
     \item Intensity transformations 
     \item Histogram equalisation 
-    \item Histogram % TODO matching?
+    \item Histogram matching
     \item Exercise 1
 \end{enumerate}
 
 \section{Introduction}%
 \label{sec:Introduction}
 There will be 5 individual programming exercises, all of which must be submitted and passed. \\ 
-There will be 3 exams, of 1 hour in length, at 1800 on 2025-11-16, 2026-12-14, and 2026-01-%TODO 
-They will be open content, and no resits.
+There will be 3 exams, of 1 hour in length, at 1800 on 2025-11-16, 2026-12-14, and 2026-01-21 .
+They will be open book, with no resits.
 
 \section{Images}%
 \label{sec:Images}
@@ -130,6 +131,39 @@ sometimes divides by how many there are in total. Both will be used). We also ha
 many pixels were in the image until this greyscale value (monotonically increasing).
 
 Our objective with histogram equalisation is to improve the image contrast, by making equal use of all grey levels. We
-would like a histogram that is uniformly distributed. This will not happen, but we can dream.
+would like a histogram that is uniformly distributed. This will not happen, but we can dream. This is effectively the
+same as aiming for a cumulative histogram, described by the function $f \left(x\right) = x$.
 
+In order to compute the image histogram, we have wonderful numpy functions, such as
+\lstinline[columns=fixed]{np.histogram}. To find the cumulative histogram we can use
+\lstinline[columns=fixed]{np.cumsum}. WE then normalise the cumulative histogram (by dividing by the total number of
+pixels), and then multiply the normalised histogram by the maximal grey level value ($Z - 1$). Next we need to veriify
+that the minimum value is 0, and maximum is $z = 1$, otherwise stretch the result linearly in the range $\left[0, Z -
+1\right]$. Round the values to get integers, and then map the intensity values of the image using the result of the
+previous step. \\ 
+The algorithm is, take the cumulative histogram $C \left(k\right)$, and let $m$ be the first greyscale level, such that
+$C \left(m\right) \ne 0$. Then \[
+    T \left(k\right) = \text{round}  \left(255 \cdot \frac{C \left(k\right) - C \left(m\right)}{C \left(255\right) - C
+    \left(m\right)} \right)
+\] 
+
+In most discrete images it is impossible to achieve a completely uniform histogram – only an approximation. The
+histogram equalization transformation is monotonic (as the process involves the cumulative sum), and therefore the
+relative brightness of a pixel is preserved. The number of different pixel values (full bins in the histogram) can only
+decrease. We might merge bins, but we cannot split them.
+
+This will fail when the desired grey level distribution is not uniform (consider a text document). It will also fail
+when content from different sources is equalised together (such as from two non related images).
+
+\section{Histogram matching}%
+\label{sec:Histogram matching}
+Histogram matching is a process to adjust the histogram of a source image, to resemble the histogram of a target image.
+It is used to transfer appearance characteristics (such as brightness, and contrast) from one image to another. The
+steps are as follows: \begin{enumerate}
+    \item Compute the histograms of the source, and the target 
+    \item Calculate the Cumulative Distribution Function (CDF) for both histograms 
+    \item Match intensities by mapping pixel values from the source image, to the corresponding values in the target
+        histogram, using the CDFs 
+    \item Transform the image based off the mapping
+\end{enumerate}
 \end{document}
