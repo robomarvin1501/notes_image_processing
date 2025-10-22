@@ -1,0 +1,135 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 1}
+\author{Gidon Rosalki}
+\date{2025-10-22}
+
+
+\begin{document}
+\maketitle
+\section{Agenda}%
+\label{sec:Agenda}
+\begin{enumerate}
+    \item Introduction
+    \item Images 
+    \item Intensity transformations 
+    \item Histogram equalisation 
+    \item Histogram % TODO matching?
+    \item Exercise 1
+\end{enumerate}
+
+\section{Introduction}%
+\label{sec:Introduction}
+There will be 5 individual programming exercises, all of which must be submitted and passed. \\ 
+There will be 3 exams, of 1 hour in length, at 1800 on 2025-11-16, 2026-12-14, and 2026-01-%TODO 
+They will be open content, and no resits.
+
+\section{Images}%
+\label{sec:Images}
+What is an image? There are 2 main types of pictures, RGB, and greyscale. A greyscale image is essentially a matrix,
+where each pixel is an integer from 0 to 255 (usually). In an RGB image, each pixel is made up of 3 unsigned bytes (same
+as greyscale), each one representing one of the colours red, green, and blue. The more pixels we have in the image,
+usually the greater detail is visible in the image, but the more space it will require. 
+
+For greyscale we may represent each pixel as a float between 0 and 1, instead of a uint8. Some applications (GPUs) find
+it easier to work with these kinds of floats. Binary images are boolean matrices of 0s and 1s (see exercise 3). Finally
+RGB images have 3 greyscale channels, each one representing one of the colours red, green, and blue.
+
+In addition to the RGB colour space, there are many more colour spaces, such as the YIQ colour space. Here, Y is the
+greyscale channel, and together I and Q encode the colours by the following calculation: \[
+    \begin{bmatrix}
+        Y \\
+        I \\
+        Q 
+    \end{bmatrix} = \begin{bmatrix}
+        0.299 & 0.587 & 0.114 \\
+        0.596 & -0.275 & -0.321 \\
+        0.212 & -0.523 & 0.311
+    \end{bmatrix} \begin{bmatrix}
+        R \\
+        G \\
+        B
+    \end{bmatrix}
+\]
+This is generally used in TVs, and came about to provide backward compatibility to greyscale TVs (that only used the Y
+channel), with colour TVs. \\ 
+There is also HSB - Hue Saturation Brightness colour space, often used in photo editing, since it is easier for humans
+to use to get a precise colour.
+
+\section{Intensity transformations}%
+\label{sec:Intensity transformations}
+Our first case is the single pixel intensity transformation. In this case, we can represent this function with a lookup
+table: \[
+    s = T \left(r\right)
+\]
+Where $r$ is the old pixel, $s$ is the new, and it is transformed through the function / table $T$. For example,
+consider the function \[
+    T \left(r\right) = 255 \cdot \left(\frac{r}{255} \right)^{0.3}
+\]
+This function has its problems, since we firstly divide $r$ by 255, then do something to it, and then remultiply it.
+Instead, if we work with $s, r \in \left[0, 1\right]$ then we can simply perform the function \[
+    s = r^{0.3}
+\]
+Much simpler. 
+
+Let us also consider the function \[
+    r \in \left[0, 1\right]\ T \left(r\right) = 1 - r
+\]
+This inverts the image. This is often very useful in the medical imaging world.
+
+Another useful functionn is the log transform, which increases the visibility of a very dark image. \begin{align*}
+    T \left(r\right) &= c \cdot \log \left(1 + r\right) \\
+    c &= \frac{255}{\log \left(1 + \text{maxInputVal} \right)}  \\ 
+    s, r &\in \left\{0, \dots, 255\right\}
+\end{align*}
+
+We also have the family of $\gamma$ correction functions where \[
+    T \left(r\right) = c \cdot r^\gamma
+\]
+These are useful for correcting the colours of an image. For example, a projector's image is on a grey background. Since
+the image is expecting a white background, so a correction needs to be applied such that the image is brightened. A
+gamma larger than one will darken the image, where a gamma smaller than one will brighten the image.
+
+\section{Histogram equalisation}%
+\label{sec:Histogram equalisation}
+What is a histogram? A histogram is a graph that measures how many pixels there are for each level of greyscale (and
+sometimes divides by how many there are in total. Both will be used). We also have cumulative histograms, which show how
+many pixels were in the image until this greyscale value (monotonically increasing).
+
+Our objective with histogram equalisation is to improve the image contrast, by making equal use of all grey levels. We
+would like a histogram that is uniformly distributed. This will not happen, but we can dream.
+
+\end{document}
