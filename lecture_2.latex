@@ -1,0 +1,172 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 2}
+\author{Gidon Rosalki}
+\date{2025-10-26}
+
+
+\begin{document}
+\maketitle
+\section{Properties of histogram equalisation}%
+\label{sec:Properties of histogram equalisation}
+Monotonic transformation: Does not reverse intensity order. If we apply an equalisation twice, then nothing happens. The
+new intensity is approximately equal to the cumulative probability. Sometimes we need to be adaptive in histogram
+equalisation, for example if we have different intensity distributions in an image like sunny areas, and shadowed areas,
+but how do we segment the image? We compute the histogram of local regions around the pixel. So, for each pixel, we
+compute the equalisation LUT in the local region, and transform \textbf{only the centre pixel} by the LUT. We then do
+this for each pixel. This is easily optimisable from $n^2$ by subtracting and adding \textbf{only the pixels that change}
+between each pixel. \\ 
+We do need to consider what size window we should use around each pixel, consider:
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_2_adap_histogram_eq}
+    \caption{Adaptive histogram equalisation}
+\end{figure}
+As we can see, different sized windows have different effects on the final picture. 
+
+\section{Fourier transformation}%
+\label{sec:Fourier transformation}
+Let us consider how to save data from a $10,000$ pixel image. with 1 pixel, well we do not see much. With 1000, we see a
+tenth, and 5000 we can see half. However, if we instead blur the image a bit, well 1 still does not show much, but 1,000
+gives us a blurry image, and 5,000 gives an image that is not trivially distinguishable from the original.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_2_data_saving}
+    \caption{Blurring images}
+\end{figure}
+
+\subsection{Basis of a vector space}%
+\label{sub:Basis of a vector space}
+Every vector in a vector space is a linear combination of basis vectors: \[
+    \begin{bmatrix}
+        2 & 1 \\
+        1 & 0
+    \end{bmatrix} = 2 \begin{bmatrix}
+        1 & 0 \\
+        0 & 0
+    \end{bmatrix} + 1 \begin{bmatrix}
+        0 & 1 \\
+        0 & 0
+    \end{bmatrix} + 1 \begin{bmatrix}
+        0 & 0 \\
+        1 & 0
+    \end{bmatrix} + 0 \begin{bmatrix}
+        0 & 0 \\
+        0 & 1
+    \end{bmatrix}
+\]
+A standard (natural) basis is a local representation, of 1 pixel. In a $k$ dimensional vector space, every set of $k$
+\textit{independent} vectors form a basis. An \textbf{orthogonal} basis is when every two basis vectors are orthogonal,
+and an \textbf{orthonormal} basis is an orthogonal basis, with all the absolute values of the basis vectors being 1. \\
+
+\subsection{Fourier transformation}%
+\label{sub:Fourier transformation}
+The Fourier transformation is comprised of \textbf{easy} equations, that are \textbf{hard} to understand. It is a
+representation of signals, and images. The standard representation, is a collection of samples, or perhaps pixels, where
+one value gives the grey level at one pixel (\textbf{local} representation). The \textit{Fourier} representation is the
+weighted sum of sin waves (of frequency $\omega$), where each wave $\omega$ is assigned an \textit{amplitude} and
+\textit{phase} (the phase is the starting point of the wave). \textbf{Any} periodic function can be rewritten as a
+weighted sum of sines, and cosines of different frequencies. This is called a \textit{Fourier Series}.
+Pictures do not appear to be periodic, but if we tile them, then they may be considered such.
+
+\subsection{Mathematical revision}%
+\label{sub:Mathematical revision}
+A complex number is comprised of 2 real numbers, where one is multiplied by $i$ such that $i^2 = 1$: \[
+    a + bi : a, b \in \R \land i^2 = 1
+\]
+This may also be represented as \[
+    a + bi = R \cdot e^{i \alpha} \land e^{i \alpha} = \cos \left(\alpha\right) + i \sin \left(\alpha\right)
+\]
+From this the absolute value is \[
+    R = \sqrt{\left(a^2 + b^2\right)} 
+\]
+and the phase is \[
+    \alpha = \tan^{-1} \left(\frac{b}{a} \right)
+\]
+To multiply together $a + bi$ can be a bit complex (har har), but should we use the other representation: \[
+    R_1 e^{i \alpha_1} \cdot R_2 e^{i \alpha_2} = R_1 \cdot R_2 \cdot e^{i \left(\alpha_1 + \alpha_2\right)}
+\]
+We may gain certain physical numbers from this: \begin{gather*}
+    \sin \left(2\pi \omega x\right) \implies \lambda = \frac{1}{\omega}  \\ 
+    \sin \left(2\pi \omega x\right) \implies f = \frac{1}{\omega}  \\ 
+\end{gather*}
+(Remember, frequency is 1 over wavelength). 
+
+\subsection{1D Discrete Fourier Transform}\label{sub:_d_discrete_fourier_transform} % (fold)
+The 1D Fourier transformation is defined to be \[
+    F \left(u\right) = \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N - 1} f \left(x\right)
+    e^{\displaystyle\frac{-2 \pi i u x}{N}}
+\]
+So, for example \[
+    F \left(0\right) = \displaystyle\frac{1}{N}\displaystyle\sum_{x = 0}^{N - 1} f \left(x\right) e^0 = f
+\]
+
+The 1D inverse fourier transform \[
+    f \left(x\right) = \displaystyle\frac{1}{1} \displaystyle\sum_{u = 0}^{N - 1} F \left(u\right)
+    e^{\displaystyle\frac{-2 \pi i u x}{N}}
+\]
+Where $f$ is a weighted sum of sines and cosines. The complexity of the base algorithm is $O \left(N^2\right)$, since we
+have to do $N$ calculations, for $N$ items. However, there exists the FFT, which may be done in $O \left(N \log
+\left(N\right)\right)$. This was done through clever recursion, where we divide and conquer the input.
+
+\subsubsection{Fourier basis vectors}\label{sec:fourier_basis_vectors} % (fold)
+To compute $f$ from $F$, we carry out \[
+    f \left(x\right) = \displaystyle\sum_{u = 0}^{N - 1} F \left(u\right)
+    e^{\displaystyle\frac{-2 \pi i u x}{N}}
+\]
+So this complex part with $e$ is the Fourier basis, such that \[
+    e^{\displaystyle\frac{-2 \pi i u x}{N}} = \cos \left(\displaystyle\frac{2\pi u x}{N}\right) + i \sin
+    \left(\displaystyle\frac{2 \pi u x}{N}\right)
+\]
+So for each frequency $0 \leq u \leq N - 1$, we can calculate the above basis vector. 
+
+All of this gives us some very nice properties, particularly in periodicity and symmetry: \begin{gather*}
+    F \left(u\right) = F \left(u + N\right)  \\
+    F \left(u\right) = F^* \left(-u\right) = F^* \left(N - u\right) : \left(a + bi\right)^* = \left(a - bi\right) \\
+    \left|F \left(u\right)\right| = \left|F \left(-u\right)\right| \\
+\end{gather*}
+Let $N = 256$, so \begin{gather*}
+    F \left(6\right) = F \left(262\right) \\
+    F \left(6\right) = F^* \left(-6\right) = F^* \left(250\right) \\
+    \left|F \left(6\right)\right| = \left|F \left(-6\right)\right| = \left|F \left(250\right)\right|
+\end{gather*}
+All the above properties are immediate from the Fourier Transform. Fourier of $N$ real numbers gives $N$ complex Fourier
+Coefficients. This is $2N$ real numbers. Given all of $f \left(0\right)$ to $f \left(N - 1\right)$, we only need
+$\displaystyle\frac{N}{2}$ coefficients, from $F \left(0\right)$ to $F \left(\displaystyle\frac{N}{2} - 1\right)$,
+thanks to the symmetry $F \left(N - u\right) = F^* \left(u\right)$.
+% subsubsection Fourier basis vectors (end)
+% subsection 1D Discrete Fourier Transform (end)
+\end{document}
