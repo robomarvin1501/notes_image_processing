@@ -1,0 +1,173 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 2 - 1D Fourier Transform}
+\author{Gidon Rosalki}
+\date{2025-10-29}
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}\label{sec:introduction} % (fold)
+A chap called Fourier theorised that any periodic function (signal) can be decomposed into $F$, a set of $\sin$ and
+$\cos$ periodic functions, of different frequencies (called a Fourier series). Since this is not a mathematical course,
+we will not prove it, nor be expected to understand all the mathematical depths. \\ 
+Given the set $F$, we can reconstruct $f$ without any loss of data. The Fourier Transform allows us to use the unique
+properties of of decomposition into $\sin$ and $\cos$ on any function. \\ 
+
+Given a complex number $c = a + bi = R \cdot e^{ialpha}$, where $e^{i\alpha} = \cos \left(\alpha\right) + i \sin
+\left(\alpha\right)$. The absolute value is computed \[
+    \left|c\right| = R = \sqrt{a^2 + b^2} 
+\]
+The \textit{phase} is $\alpha$ where \[
+    \alpha = \tan^{-1} \left(\displaystyle\frac{b}{a}\right)
+\]
+
+And the \textit{conjugate}: \[
+    \overline{c} = c^* = a - bi
+\]
+% section Introduction (end)
+
+\section{Periodic functions}\label{sec:periodic_functions} % (fold)
+A periodic function can be described sing its \textbf{frequency}, \textbf{amplitude}, and \textbf{phase shift}. The
+\textbf{frequency} is how much time it takes to complete a \textit{complete} phase (so for $\sin$: $2\pi$). The
+\textbf{amplitude} is the absolute maximum value of the wave. The \textbf{phase shift} is
+how much the wave is shifted from its normal position. \\ 
+The \textbf{wavelength} $\left(\lambda\right)$ is the distance over which a periodic wave's shape repeats. As a result, we can see that, since
+the frequency is the number of waves per unit: \[
+    f = \displaystyle\frac{1}{\lambda}
+\]
+
+So, for $\sin$, the wavelength is $2\pi$, and the frequency is $\displaystyle\frac{1}{2\pi}$, or in general for $\sin
+\left(ax\right)$, there is a wavelength of $\displaystyle\frac{2\pi}{a}$, and a frequency of
+$\displaystyle\frac{a}{2\pi}$. To save effor, we will normally put $2\pi$ inside the sin expression as well: $\sin
+\left(2\pi \omega x\right)$, and have a frequency of $\omega$Hz, with a wavelength of $\displaystyle\frac{1}{\omega}$.
+% section Periodic functions (end)
+
+\section{Back to Fourier}\label{sec:back_to_fourier} % (fold)
+By using the Fourier transformation, we are moving from the \textit{time} domain, to the \textit{frequency} domain. We
+perform a decomposition into different resolutions, the low frequencies give us a rough general structure, and the high
+frequencies the fine detail. This is very useful for signal understanding, and processing, for jobs like filtering,
+removing noise, compression, and so on. 
+
+\subsection{How do we do this?}%
+\label{sub:How do we do this?}
+We want to decompose $f \left(x\right)$ into a set of $\sin$ and $\cos$ functions of different frequencies: \[
+    f \left(x\right) = \displaystyle\sum_{\omega}^{}a_\omega \cos \left(\displaystyle\frac{2\pi \omega x}{N}\right) +
+    b_\omega \sin \left(\displaystyle\frac{2\pi \omega x}{N}\right)
+\]
+We need to find $a_\omega$ and $b_\omega$, and we have $N$ data points. This is done with the Fourier transformation.
+% section Back to Fourier (end)
+
+\subsection{Discrete Fourier Transform (DFT)}\label{sub:discrete_fourier_transform_dft_} % (fold)
+DFT: \[
+    F \left(\omega\right) = \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x \omega}{N}}
+\]
+Now is a good time to remember Euler's formula: \[
+    e^{i \theta} = \cos \left(\theta\right) + i \sin \left(\theta\right)
+\]
+So: \begin{align*}
+    F \left(\omega\right) &= \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x
+    \omega}{N}} \\
+                          &= \displaystyle\sum_{x = 0}^{N - 1} f \left(x\right) \left(\cos \left(-
+                          \displaystyle\frac{2\pi x \omega}{N}\right) + i \cdot \sin \left(- \displaystyle\frac{2 \pi x
+                  \omega}{N}\right)\right) \\ 
+                          &= \displaystyle\sum_{x = 0}^{N - 1} f \left(x\right) \left(\cos \left(
+                          \displaystyle\frac{2\pi x \omega}{N}\right) - i \cdot \sin \left(\displaystyle\frac{2 \pi x
+                  \omega}{N}\right)\right) \\ 
+                          &= \displaystyle\sum_{x = 0}^{N - 1} f \left(x\right) \cos \left(\displaystyle\frac{2 \pi x
+                          \omega}{N}\right) - i \displaystyle\sum_{x = 0}^{N - 1} \sin \left(\displaystyle\frac{2 \pi x
+                      \omega}{N}\right)
+%                          &= \displaystyle\sum_{x = 0}^{N - 1} f \left(x\right) \cos \left(
+%                          \displaystyle\frac{2\pi x \omega}{N}\right) - i \displaystyle\sum_{x = 0}^{N - 1} \sin \left(\displaystyle\frac{2 \pi x
+%                  \omega}{N}\right)\right) \\ 
+\end{align*}
+
+And in this beautiful final expression, the first half (the sum over $\cos$) expresses $a_\omega$, and the second half
+($i$ times the sum over $\sin$) expresses $b_\omega$.
+
+We also have the IDFT (Inverse DFT): \[
+    f \left(\omega\right) = \displaystyle\frac{1}{N}\displaystyle\sum_{\omega = 0}^{N - 1}F \left(\omega\right) e^{\displaystyle\frac{2\pi i x \omega}{N}}
+\]
+
+In real life, we use the Fast Fourier Transform (FFT), which takes only $O \left(N \log N\right)$, instead of $O
+\left(N^2\right)$
+% subsection Discrete Fourier Transform (DFT) (end)
+
+
+\subsection{Properties}\label{sub:properties} % (fold)
+The FT is linear: \begin{gather*}
+    \Phi \left(f \left(x\right) + g \left(x\right)\right) = \Phi \left(f \left(x\right)\right) + \Phi \left(g
+    \left(x\right)\right) \\ 
+    \Phi \left(a \cdot f \left(x\right)\right) = a \cdot \Phi \left(f \left(x\right)\right)
+\end{gather*}
+
+Additionally, there is scaling: If $f \left(x\right)$ gives us the Fourier set $F \left(u\right)$, then \[
+    f \left(ax\right) \to \displaystyle\frac{1}{\left|a\right|} F \left(\displaystyle\frac{u}{a}\right)
+\]
+Periodicity: \[
+    \forall k \in \Z\ F \left(u\right) = F \left(u + kN\right)
+\]
+
+Symmetry: \begin{gather*}
+    F \left(-u\right) = F^* \left(u\right) \\ 
+    \left|F \left(u\right)\right| = \left|F \left(-u\right)\right|
+\end{gather*}
+
+So: \begin{gather*}
+    F \left(u\right) = F^* \left(-u\right) = F^* \left(N - u\right) \\ 
+    \left|F \left(u\right)\right| = \left|F \left(-u\right)\right| = \left|F \left(N - u\right)\right|
+\end{gather*}
+% subsection Properties (end)
+
+
+\section{Non-stationary signals}\label{sec:non_stationary_signals} % (fold)
+
+% section Non-stationary signals (end)
+
+\section{Sound}\label{sec:sound} % (fold)
+
+% section Sound (end)
+
+\section{STFT}\label{sec:stft} % (fold)
+
+% section STFT (end)
+
+\section{Spectrograms}\label{sec:spectrograms} % (fold)
+
+% section Spectrograms (end)
+
+\end{document}
