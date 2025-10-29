@@ -153,21 +153,102 @@ So: \begin{gather*}
 \end{gather*}
 % subsection Properties (end)
 
+What happens if we take $F \left(0\right)$? Well: \begin{align*}
+    F \left(u\right) &= \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right)
+    e^{\displaystyle\frac{-2 \pi i u x}{N}} \\
+    F \left(0\right) &= \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right)
+    e^{\displaystyle\frac{-2 \pi i 0 x}{N}} \\
+                     &= \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) \\ 
+                     &\approx \text{ The signal average}
+\end{align*}
+
+Since the FT returns complex numbers: \[
+    F \left(u\right) = R \left(u\right) + i \cdot I \left(u\right)
+\]
+To visualise, we use the amplitude: \[
+    \left|F \left(u\right)\right| = \sqrt{R^2 \left(u\right) +  I^2 \left(u\right)}
+\]
+
+\subsection{Basis vectors}\label{sub:basis_vectors} % (fold)
+DFT is a basis transform – We are moving from the standard basis to the Fourier basis. So, this can be done by a matrix
+multiplication: \[
+    F \left(\omega\right) = \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x
+    \omega}{N}} \leftrightarrow \vec{F} = M_{N \times N} \vec{f}
+\]
+Where \[
+    \vec{f} = \begin{bmatrix}
+        f \left(0\right) \\
+        f \left(1\right) \\
+        \vdots \\
+        f \left(N - 1\right) \\
+    \end{bmatrix}
+\]
+and similarly for $F$. Reminders of this content can be found in algorithms. \\ 
+% subsection Basis vectors (end)
+
 
 \section{Non-stationary signals}\label{sec:non_stationary_signals} % (fold)
-
+A stationary signal has the same function, the entire time, but a non stationary signal changes function over time. The
+Fourier transform provides localisation in the \textit{frequency} domain, but no localisation in time. In short, the
+resultant graph shows peaks at frequencies, but not when they happen. A non stationary signal will, as a result, produce
+a noisy Fourier transform, where a stationary one will not. 
 % section Non-stationary signals (end)
 
 \section{Sound}\label{sec:sound} % (fold)
+Sound is a vibration that typically propagates as an audible wave of pressure, through a transmission medium such as a
+gas, liquid or solid. We represent sound as a stationary, 1D, signal. \\ 
 
+Image and sound representation are not very different: \begin{itemize}
+    \item Quality: \begin{itemize}
+            \item Image quality depends on resolution, the number of pixels in the image 
+            \item Sound quality depends on the sampling rate (samples per second)
+        \end{itemize}
+    \item Memory: \begin{itemize}
+        \item Images are represented using 8 bits per pixel (values between 0, and 255)
+        \item In sound the bit depth (bits/sample) is defined as the amplitude resolution, so telephone and AM radio are
+            8 bits, -127 to 127, and audio CDs are 16 bits (-32768, 32767)
+    \end{itemize}
+\end{itemize}
 % section Sound (end)
 
 \section{STFT}\label{sec:stft} % (fold)
+When applying DFT on non-stationary signals, localisation in time is lost. To avoid this, we would like to apply DFT
+independently on short-time segments. We do this by assuming that the segments are short enough to be considered
+stationary. This is called the Short-Time Fourier Transform (STFT). This is done by the following steps: \begin{enumerate}
+    \item Choose a window of finite length
+    \item Place the window on top of signal at $t = 0$
+    \item Truncate the signal using this window
+    \item Compute DFT of the truncated signal, save results
+    \item Incrementally slide the window to the right
+    \item Go back to step 3, until window reaches the end of the signal
+\end{enumerate}
 
+Windows have various properties. Their shape for example, we often use rectangular, Gaussian, triangles, etc. The
+\textit{length} $W$, is the size of the window. A longer length results in better frequency resolution, where a shorter
+length results in better time resolution. Finally, the \textit{shift} $L$ describes how much the window moves every
+time. A smaller shift results in smoother results, but a larger shift has less computation.
+
+So, the STFT for time $t$ is as follows: \[
+    F \left(\omega, t\right) = \displaystyle\sum_{x = -\infty}^{\infty} f \left(x\right) W \left(t - x\right) e^{-
+        \displaystyle\frac{2 \pi i x \omega}{N}}
+\]
+and the ISTFT (where $K$ is a normalisation constant): \[
+    f \left(x\right) = K \displaystyle\sum_{p = -\infty}^{\infty} \displaystyle\sum_{u = 0}^{N - 1}F \left(u,
+        pL\right)e^{\displaystyle\frac{2 \pi i u x}{N}}
+\]
 % section STFT (end)
 
 \section{Spectrograms}\label{sec:spectrograms} % (fold)
+These are a visual representation of the spectrum of frequencies of a signal as it varies with time. A In a 3D
+representation, the X axis represents time, Y the frequency, and the non existent Z is instead represented by colours
+for the amplitude / magnitude. This helps us represent the localisation in time we achieved from STFT. \\ 
 
+Sometimes, visualisation is not clear, due to the output range of the transform, which can give us very large values.
+So, we want to compress the range. The log transform enables us to compress the dynamic range of the values, which has
+the steps \begin{itemize}
+    \item Compute $\log \left(\left|F \left(u\right)\right| + 1\right)$
+    \item Scale to the full grey level range
+\end{itemize}
 % section Spectrograms (end)
 
 \end{document}
