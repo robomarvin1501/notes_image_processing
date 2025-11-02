@@ -1,0 +1,163 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 3}
+\author{Gidon Rosalki}
+\date{2025-11-02}
+
+
+\begin{document}
+\maketitle
+\section{2D Fourier}\label{sec:_d_fourier} % (fold)
+We are aiming to transform the image domain, with a natural basis, comprised of real numbers, into the frequency domain,
+with a Fourier basis, comprised of complex numbers: \[
+    f \left(x, y\right) \to F \left(u, v\right)
+\]
+The image, and transform coefficients are arranged in a 2D array, with both image $f$, and Fourier transform $F$, being
+cyclic / periodic. \\
+2D FT: \[
+    F \left(u, v\right) = \displaystyle\sum_{y = 0}^{N - 1}\displaystyle\sum_{x = 0}^{N - 1}f \left(x, y\right)
+    e^{-\displaystyle\frac{2\pi i \left(ux + vy\right) }{N}}
+\]
+
+Inverse 2D Fourier: \[
+    f \left(x, y\right) = \displaystyle\frac{1}{N}\displaystyle\sum_{u = 0}^{N - 1}\displaystyle\sum_{v = 0}^{N - 1}F \left(u, v\right)
+    e^{-\displaystyle\frac{2\pi i \left(ux + vy\right) }{N}}
+\]
+
+One may consider taking the Fourier transform of the image, getting the relative frequencies of various functions
+applied to the picture. For 5x5 bases, ie $-2 \leq u, v \leq 2$: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_5x5}
+    \caption{5x5}
+\end{figure}
+
+Each square represents the function $\sin \left(\displaystyle\frac{2\pi}{N} \left(ux + vy\right)\right)$. So here there
+are 25 basis functions for each image of 5x5, with each function being a 5x5 matrix. $\left(0, 0\right)$ is at the
+centre of the image, where -1 is black, +1 is white, and grey is 0. The original image is a weighted sum of all basis
+functions, where the basis function for frequency $\left(u, v\right)$ is multiplied by the complex number $F \left(u,
+v\right)$ specifying both the amplitude, and the phase (shift). 
+
+The \textit{Fourier spectrum} is as follows: \begin{itemize}
+    \item Fourier coefficient (complex number): $F \left(u\right) = R \left(u\right) + Im \left(u\right)$
+    \item Fourier spectrum (positive number): $\left|F \left(u\right)\right| = \sqrt{R^2 \left(u\right) + Im^2 \left(u\right)} $
+    \item Fourier phase (angle): $\theta \left(u\right) = \tan^{-1} \left(\displaystyle\frac{Im \left(u\right)}{R
+        \left(u\right)}\right)$
+    \item Fourier coefficient (complex number): $F \left(u\right) = \left|F \left(u\right)\right|e^{i\theta}$
+\end{itemize}
+
+To display Fourier Spectrum as Picture, one needs to: \begin{enumerate}
+    \item Compute $\log \left(\left|F \left(u\right)\right| + 1\right)$
+    \item Scale to full grey-level range (E.g. 0..255 or 0..1)
+    \item Move $\left(u=0,v=0\right)$ to the centre of image (Shift by N/2)
+\end{enumerate}
+
+
+\subsection{Translation}\label{sub:translation} % (fold)
+\begin{align*}
+    f \left(x - x_0, y - y_0\right) &\Leftrightarrow F \left(u, v\right) e^{\displaystyle\frac{2 \pi i \left(u x_0 + v
+    y_0\right)}{N}} \\
+    F \left(u - u_0, v - v_0\right) &\Leftrightarrow f \left(x, y\right) e^{\displaystyle\frac{- 2 \pi i \left(u_0 x +
+                v_0 y\right)}{N}} \\
+\end{align*}
+The Fourier spectrum is invariant to image translation, resulting in the same Fourier Spectrum for these 2 different
+images: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_spectrum_invariance}
+    \caption{Spectrum invariance}
+\end{figure}
+% subsection Translation (end)
+
+\subsection{Decomposition}\label{sub:decomposition} % (fold)
+We can decompose the Fourier transform into computation of the 1D Fourier of each column, and then on that, we compute
+the 1D Fourier on each row: \begin{align*}
+    F \left(u, v\right) = \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N - 1} \displaystyle\sum_{y = 0}^{N - 1} f
+    \left(x, y\right) e^{\displaystyle\frac{-2\pi i \left(ux + vy\right)}{N}} \\ 
+    e^{\displaystyle\frac{-2\pi i \left(ux + vy\right)}{N}} &= \left(e^{\displaystyle\frac{-2 \pi i u
+    x}{N}}\right)\left(e^{\displaystyle\frac{-2 \pi i v y}{N}}\right) \\
+    \implies F \left(u, v\right) &= \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N -
+        1}\left(e^{\displaystyle\frac{-2 \pi i u x}{N}}\right) \displaystyle\sum_{y = 0}^{N - 1}f \left(x,
+        y\right) e^{\displaystyle\frac{-2 \pi ivy}{N}} \\ 
+    F \left(x, v\right) &= \displaystyle\sum_{y = 0}^{N - 1}f \left(x,
+        y\right) e^{\displaystyle\frac{-2 \pi ivy}{N}} \\ 
+        F \left(u, v\right) &= \displaystyle\frac{1}{N} \displaystyle\sum_{x = 0}^{N - 1}e^{\displaystyle\frac{2 \pi i u
+        x}{N}} F \left(x, v\right)
+\end{align*}
+So, to conclude, the 2D Fourier Transform can be computed using 1-D Fourier, by computing 1D Fourier on each column, and
+then on the result, computing 1D Fourier on each row. Therefore, the 1D Fourier Transform is enough to compute Fourier
+of \textbf{any} dimension.
+% subsection Decomposition (end)
+
+\subsection{Periodicity and Symmetry}\label{sub:periodicity_and_symmetry} % (fold)
+\begin{align*}
+    F \left(u, v\right) &= F \left(u + N, v\right) \\ 
+                        &= F \left(u, v + N\right) \\ 
+                        &= F \left(u + N, v + N\right) \\ 
+    F \left(u, v\right) &= F^* \left(-u, -v\right)\ \left(\left(a + bi\right)^* = \left(a - bi\right)\right) \\ 
+    \left|F \left(u, v\right)\right| &= \left|F \left(-u, -v\right)\right|
+\end{align*}
+% subsection Periodicity and Symmetry (end)
+
+\subsection{Example}\label{sub:example} % (fold)
+Let us consider the Fourier spectrum of $\cos \left(\displaystyle\frac{2 \pi n x}{N}\right)$ (ie, there are $N$
+samples): 
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_n1f1}
+    \caption{}
+\end{figure}
+The two points are the two options where the Fourier spectrum of that coordinate is 1. This can be seen when we repeat
+this for more images: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_nN8f2}
+    \caption{}
+\end{figure}
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_nN2f3}
+    \caption{$\left|F \left(-\displaystyle\frac{N}{2}, 0\right)\right| = \left|F \left(\displaystyle\frac{N}{2},
+    0\right)\right| = 1$}
+\end{figure}
+% subsection Example (end)
+
+% section 2D Fourier (end)
+
+
+\end{document}
