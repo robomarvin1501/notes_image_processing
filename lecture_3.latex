@@ -157,6 +157,99 @@ this for more images:
 \end{figure}
 % subsection Example (end)
 
+\subsection{Linearity}\label{sub:linearity} % (fold)
+Let $\phi$ be the Fourier transform
+
+\begin{gather*}
+    \Phi \left(f_1 \left(x, y\right) + f_2 \left(x, y\right)\right) = \Phi \left(f_1 \left(x, y\right)\right) + \Phi
+    \left(f_2 \left(x, y\right)\right) \\ 
+    \Phi \left(a \cdot f \left(x, y\right)\right) = a \cdot \Phi \left(f \left(x, y\right)\right) \\ 
+    \Phi \left(f \left(ax, by\right)\right) = \displaystyle\frac{1}{\left|ab\right|} F \left(\displaystyle\frac{u}{a},
+    \displaystyle\frac{v}{b}\right)
+\end{gather*}
+
+% subsection Linearity (end)
+
+\subsection{Discrete derivatives using Fourier}\label{sub:discrete_derivatives_using_fourier} % (fold)
+Derivatives are defined over continuous functions, so how can we compute the derivative of a sequence of numbers? One
+possibility is to use the Fourier transform: \begin{align*}
+    f \left(x\right) &= \displaystyle\sum_{u}^{}F \left(u\right) e^{\displaystyle\frac{2\pi uix}{N}}
+\end{align*}
+The $F$ term is constant, and then we may differentiate the $e$ term. \begin{align*}
+    f' \left(x\right) &= \left(\displaystyle\sum_{u}^{}F \left(u\right)e^{\displaystyle\frac{2\pi i u x}{N}}\right) \\ 
+                      &= \displaystyle\sum_{u}^{}F \left(u\right) \left(e^{\displaystyle\frac{2 \pi i u x}{N}}\right)'
+                      \\ 
+                      &= \displaystyle\frac{2 \pi i}{N} \displaystyle\sum_{u}^{}F \left(u\right)e^{\displaystyle\frac{2 \pi i u x}{N}}
+\end{align*}
+So the derivatives \textbf{increase} the high frequencies, since $F \left(u\right) \to u F \left(u\right)$. The highest
+frequencies are always the noise. 
+
+% TODO 20, 21
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_effect_of_noise}
+    \caption{Effect of noise}
+\end{figure}
+We see in the first set, with no noise, The second derivative has two discrete spikes where the first derivative
+changes, whereas in the third example, it is nigh on impossible to find the spikes. 
+
+Given an original image, and its Fourier transform: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_original}
+    \caption{Original}
+\end{figure}
+a \enquote{low pass}, where we only pass the low frequencies, results in a blurred image,
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_low_pass}
+    \caption{Low pass}
+\end{figure}
+The high pass only passes through the high frequencies:
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_high_pass}
+    \caption{High pass}
+\end{figure}
+% subsection Discrete derivatives using Fourier (end)
+
+\subsection{Aliasing}\label{sub:aliasing} % (fold)
+Sampling can result in aliasing. If we sample at $1.5\pi$: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_3_aliasing}
+    \caption{Aliasing}
+\end{figure}
+Then as we can see, we may wind up with a wave (the blue one) which is drastically different from our source (the red
+one). To avoid aliasing, the distance between the sample points should be \textbf{less than} $\displaystyle\frac{1}{2}$
+of the wavelength (Niquest).
+
+\textbf{VERY IMPORTANT} Sampling: \\
+In order to avoid aliasing, when you want to sample a photo, \textbf{blur it first}! (As in, perform a low pass filter,
+to reduce the highest frequencies). This avoids aliasing, since this way we do not need too high a frequency for
+measuring. One does \textbf{NOT} shrink an image by sampling every other image, but rather you blur, and then sample.
+% subsection Aliasing (end)
+
+\subsection{Signal resizing}\label{sub:signal_resizing} % (fold)
+For example, we want to resize from $N$ samples to $\displaystyle\frac{N}{2}$ samples: \begin{enumerate}
+    \item Compute Fourier ($N$ samples to $N$ coefficients)
+    \item Bring $u = 0$ to the centre (FFT shift)
+    \item Crop Fourier from $N$ to $\displaystyle\frac{N}{2}$ coefficients - remove the $\displaystyle\frac{N}{2}$ high
+        frequencies 
+    \item Compute the Inverse Fourier ($\displaystyle\frac{N}{2}$ coefficients to $\displaystyle\frac{N}{2}$ samples)
+\end{enumerate}
+
+To reduce an image: \begin{enumerate}
+    \item Blur, and subsample every 2nd pixel, in every 2nd row 
+    \item Use Fourier, compute $N \times N$, and shift $\left(0, 0\right)$ to the center. Crop Fourier (eg to
+        $\displaystyle\frac{N}{2} \times \displaystyle\frac{N}{2}$), and compute the inverse Fourier
+\end{enumerate}
+
+To compute we do something very similar, and have it behave similarly to reconstructing an image from a low pass. We
+compute the Fourier ($N \times N$), pad it with zeroes ($2N \times 2N$), and then compute the inverse Fourier.
+% subsection Signal resizing (end)
+
 % section 2D Fourier (end)
 
 
