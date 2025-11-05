@@ -1,0 +1,130 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 3}
+\author{Gidon Rosalki}
+\date{2025-11-05}
+
+
+\begin{document}
+\maketitle
+
+\section{Reminder}\label{sec:reminder} % (fold)
+You may double check the tricks about complex numbers from last weeks tutorial. \\ 
+Let us recall the 1D Fourier Transform: It concerns itself with moving from the \textit{time} domain, to the
+\textit{frequency} domain. The Discrete Fourier transform (DFT) is defined as follows: \[
+    F \left(\omega\right) = \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x \omega}{N}}
+\]
+and its inverse (IDFT): \[
+    f \left(\omega\right) = \displaystyle\frac{1}{N}\displaystyle\sum_{\omega = 0}^{N - 1}F \left(\omega\right) e^{\displaystyle\frac{2\pi i x \omega}{N}}
+\]
+
+We want to decompose a function $f \left(x\right)$ into a set of $\sin$ and $\cos$ functions of different frequencies:
+\[
+    f \left(x\right) = \displaystyle\sum_{\omega}^{}a_\omega \cos \left(\displaystyle\frac{2\pi \omega x}{N}\right) +
+    b_\omega \sin \left(\displaystyle\frac{2\pi \omega x}{N}\right)
+\]
+and then \begin{align*}
+    F \left(\omega\right) &= \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x
+    \omega}{N}} \\
+    F \left(\omega\right) &= \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x
+    \omega}{N}} \\
+          &= \displaystyle\sum_{x = 0}^{N - 1} f \left(x\right) \cos \left(\displaystyle\frac{2 \pi x
+          \omega}{N}\right) - i \displaystyle\sum_{x = 0}^{N - 1} \sin \left(\displaystyle\frac{2 \pi x
+      \omega}{N}\right)
+\end{align*}
+
+In total: Any function (signal) $f\left(x\right)$ can be decomposed into $F$ - a set of $\sin$ and $\cos$ periodic
+functions of different frequencies. $f$ can then be reconstructed from $F$ without any loss of data.
+
+STFT: \[
+    F \left(\omega, t\right) = \displaystyle\sum_{x = -\infty}^{\infty} f \left(x\right) W \left(t - x\right) e^{-
+        \displaystyle\frac{2 \pi i x \omega}{N}}
+\]
+ISTFT: \[
+    f \left(x\right) = K \displaystyle\sum_{p = -\infty}^{\infty} \displaystyle\sum_{u = 0}^{N - 1}F \left(u,
+        pL\right)e^{\displaystyle\frac{2 \pi i u x}{N}}
+\]
+
+% section Reminder (end)
+
+\section{2D Fourier Transform}\label{sec:_d_fourier_transform} % (fold)
+The 2D Fourier is defined as: \[
+    F \left(u, v\right) = \displaystyle\sum_{y = 0}^{N - 1}\displaystyle\sum_{x = 0}^{N - 1}f \left(x, y\right)
+    e^{-\displaystyle\frac{2\pi i \left(ux + vy\right) }{N}}
+\]
+
+Inverse 2D Fourier: \[
+    f \left(x, y\right) = \displaystyle\frac{1}{N}\displaystyle\sum_{u = 0}^{N - 1}\displaystyle\sum_{v = 0}^{N - 1}F \left(u, v\right)
+    e^{-\displaystyle\frac{2\pi i \left(ux + vy\right) }{N}}
+\]
+
+FT produces complex numbers. These can be represented as images in two different ways: \begin{enumerate}
+    \item Real, and imaginary part 
+    \item Magnitude and phase, where \begin{align*}
+            \text{Magnitude } &= \sqrt{R \left(u\right)^2 + Im \left(u\right)^2}  \\
+            \text{Phase } &= \tan^{-1} \left(\displaystyle\frac{Im \left(u\right)}{R \left(u\right)}\right)
+    \end{align*}
+\end{enumerate}
+In image processing, we will only use the magnitude, since it contains the most relevant information. 
+
+To compute the 2D Fourier transform, we repeat the 1D Fourier twice: \begin{enumerate}
+    \item Compute the 1D Fourier for each row
+    \item On the result, compute the 1D Fourier for each column
+    \item (Multiply by N , application dependent)
+\end{enumerate}
+The 1D Fourier transform is sufficient for computing any multi-dimensional Fourier transform.
+
+Another neat trick is that the Fourier Transform is \textbf{not} affected by translations within the original image.
+Additionally, Fourier is non local: Fourier Transform supplies a global representation of the image in the frequency
+domain. Local objects / features in the image cannot be assigned to specific frequencies!
+In general:
+\begin{itemize}
+    \item Low frequencies represent the coarse structure of the image (large homogeneous parts like walls, sky, etc.)
+    \item High frequencies represent the fine details in the image (fine texture, wrinkles, noise, etc.)
+\end{itemize}
+% section 2D Fourier Transform (end)
+
+
+\section{Derivatives}\label{sec:derivatives} % (fold)
+
+% section Derivatives (end)
+
+\section{Filtering}\label{sec:filtering} % (fold)
+
+% section Filtering (end)
+
+\end{document}
