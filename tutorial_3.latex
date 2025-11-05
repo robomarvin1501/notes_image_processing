@@ -120,11 +120,30 @@ In general:
 
 
 \section{Derivatives}\label{sec:derivatives} % (fold)
+To compute the x derivative of $f$ (up to a constant): \begin{itemize}
+    \item Compute the Fourier transform $F$
+    \item Multiply each Fourier coefficient $F \left(u, v\right)$ by $u$
+    \item Compute the inverse Fourier transform
+\end{itemize}
+To compute the y derivative of $f$ (up to a constant): \begin{itemize}
+    \item Compute the Fourier transform $F$
+    \item Multiply each Fourier coefficient $F \left(u, v\right)$ by $v$
+    \item Compute the inverse Fourier transform
+\end{itemize}
 
+When multiplying by $u$, we know that the $N - 1$ frequency is the same as the $0$ frequency. As a result, instead of
+the highest frequency being $\displaystyle\frac{N}{2}$, it is $\displaystyle\frac{N}{2}$. We therefore instead of using
+$\left(0, \dots, N - 1\right)$, we use either $\left(0, 1, \dots, \displaystyle\frac{N}{2} - 1, -
+\displaystyle\frac{N}{2}, \dots, -1\right)$ or $\left(- \displaystyle\frac{N}{2}, \dots, 0, \dots,
+\displaystyle\frac{N}{2}\right)$ (In this option, it should centre the Fourier Transform of the image ($F$) as well. 
+
+The image derivative is the inverse FT of the weighted frequency domain. High frequencies affect the image derivative
+more than low frequencies. Noise has more high frequency than normal image.
 % section Derivatives (end)
 
 \section{Filtering}\label{sec:filtering} % (fold)
-
+The general scheme for filtering is to take the image, compute its FT, apply the filter function to the FT $H \left(u,
+v\right) \cdot F \left(u, v\right)$, and compute the output image from the IFT.
 % section Filtering (end)
 
 \end{document}
