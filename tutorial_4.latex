@@ -1,0 +1,285 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 4 - Convolution}
+\author{Gidon Rosalki}
+\date{2025-11-12}
+
+
+\begin{document}
+\maketitle
+\section{Convolution 1D and 2D}\label{sec:convolution_d_and_d} % (fold)
+\subsection{1D Convolution}\label{sub:_d_convolution} % (fold)
+A 1D Convolution has the following formula: \[
+    h \left(x\right) = \left(f * g\right) \left(x\right) = \displaystyle\sum_{i = 0}^{N - 1} f \left(i\right) g \left(x
+    - i\right)
+\]
+What we essentially do, is flip the direction of the second vector, and beginning with an overlap of 1, multiply
+element wise all the elements of the vectors, summing them together, and the result is the relevant element of the new
+vector. The easiest way to understand is to see a positioned example, and there is a great one in the provided
+presentation.
+
+\subsubsection{Properties}\label{sub:properties} % (fold)
+Convolution has various properties: \begin{gather*}
+    \text{Commutative: } f * g = g * f \\ 
+    \text{Associative: } f * \left(g * h\right) = \left(f * g\right) * h \\ 
+    \text{Distributive: } f * \left(g + h\right) = f * g + f * h
+\end{gather*}
+In addition to this, convolution is a linear operator, meaning it can be represented as simply a matrix multiplication:
+\[
+    f * g = G f
+\]
+Consider \begin{gather*}
+    f = \left(1\ 0\ 1\right) \\
+    g = \left(0\ 2\ 1\right) \\
+\end{gather*}
+Then \begin{align*}
+    f * g &= G f \\ 
+          &= \begin{bmatrix}
+              0 & 0 & 0 \\
+              2 & 0 & 0 \\
+              1 & 2 & 0 \\
+              0 & 1 & 2 \\
+              0 & 0 & 1
+          \end{bmatrix} \begin{bmatrix}
+              1 \\
+              0 \\
+              1 \\
+          \end{bmatrix} \\ 
+          &= \begin{bmatrix}
+              0 \\
+              2 \\
+              1 \\
+              2 \\
+              1 \\
+          \end{bmatrix} \\ 
+          &\implies \left(0\ 2\ 1\ 2\ 1\right)
+\end{align*}
+
+% subsection Properties (end)
+
+% subsection 1D Convolution (end)
+
+\subsection{2D Convolution}\label{sub:_d_convolution} % (fold)
+We define a 2D convolution as follows: \[
+    f \left(x, y\right) * g \left(x, y\right) = \displaystyle\sum_{i = 0}^{N - 1} \displaystyle\sum_{j = 0}^{M - 1} f
+    \left(x - i, y - j\right) g \left(i, j\right)
+\]
+Here $f$ is the image, and $g$ is the kernel / filter.
+
+We can use these kernels for doing all manner of effects on images. Remember, kernels sum to 1. If we take
+$\displaystyle\frac{1}{9}$ times a matrix of all 1s, we will get a smoothing of the image. A more popular method for
+smoothing is the kernel \[
+    \displaystyle\frac{1}{16} \begin{bmatrix}
+        1 & 2 & 1 \\
+        2 & 4 & 2 \\
+        1 & 2 & 1
+    \end{bmatrix}
+\]
+Since it results in a nicer smoothing to our eyes. Of course, we're using $3 \times 3$ examples here, but kernels are
+normally much larger, since a $3 \times 3$ kernel does very little to a large image.
+
+If we have a shifted kernel: \[
+    \begin{bmatrix}
+        0 & 0 & 0 \\
+        1 & 0 & 0 \\
+        0 & 0 & 0
+    \end{bmatrix}
+\]
+Then we will shift the image to the left. Do not forget that for a 2D kernel, you need to flip twice, since otherwise
+your convolution will shift in the wrong direction.
+% subsection 2D Convolution (end)
+% section Convolution 1D and 2D (end)
+
+\section{Image Derivatives}\label{sec:image_derivatives} % (fold)
+\subsection{First derivative approximation}\label{sub:first_derivative_approximation} % (fold)
+\[
+    \displaystyle\frac{\partial }{\partial y}f \left(i, j\right) = \displaystyle\frac{\partial }{\partial i}f \left(i,
+    j\right) = \displaystyle\lim_{\varepsilon \to 0} \displaystyle\frac{f \left(i, j\right) - f \left(i - \varepsilon,
+    j\right)}{\varepsilon}
+\]
+This is approximately the same as setting $\varepsilon = 1$, where 1 indicates 1 pixel (which is our smallest possible
+division). \\ 
+We can perform a derivative against the rows (ie, $y$ direction) with a convolution with \[
+    \begin{pmatrix}
+        1 \\
+        -1
+    \end{pmatrix}
+\]
+and in against the columns (ie, the $x$ direction) with a convolution with \[
+    \left(1\ -1\right)
+\]
+
+\subsubsection{Gradient}\label{sub:gradient} % (fold)
+The gradient is the vector of partial derivatives. It points in the direction of the most rapid change in intensity. 
+
+\begin{gather*}
+    \nabla f = \left(\displaystyle\frac{\partial f}{\partial x}, \displaystyle\frac{\partial f}{\partial y}  \right) \\ 
+\end{gather*}
+The gradient has magnitude: \[
+    \left|\nabla f\right| = \sqrt{\left(\displaystyle\frac{\partial f}{\partial x} \right)^2 +
+    \left(\displaystyle\frac{\partial f}{\partial y} \right)^2} 
+\]
+and direction (orientation angle): \[
+    \alpha = atan2 \left(\displaystyle\frac{\left(\displaystyle\frac{\partial f}{\partial x} \right)}
+    {\left(\displaystyle\frac{\partial f}{\partial y} \right)}\right)
+\]
+We also have the directional derivative, which gives us the change in angle. This is not massively used, but it is good
+to know that it exists.
+\begin{gather*}
+    \cos \left(\alpha\right) \displaystyle\frac{\partial f}{\partial x} + \sin \left(\alpha\right)
+    \displaystyle\frac{\partial f}{\partial y}  
+\end{gather*}
+
+Overall, what do these different direction derivatives do? A derivative with respect to the columns will show vertical
+edges in a picture, and with respect to the rows will show horizontal edges. Logically from here, if we take the
+magnitude of the gradients, we get the lines in both directions.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_4_edge_directions}
+    \caption{Edge directions example}
+\end{figure}
+% subsubsection Gradient (end)
+
+% subsection First derivative approximation (end)
+
+\subsection{Second derivative approximation}\label{sub:second_derivative_approximation} % (fold)
+\[
+    \displaystyle\frac{\partial^2}{\partial x^2} f \left(i, j\right) \approx f \left(i - 1, j\right) + f \left(i + 1,
+    j\right) - 2 f \left(i, j\right) 
+\]
+We can implement this by convolving with \[
+    \left(1\ -2\ 1\right)
+\] 
+We can check this by seeing that \[
+    \left[1\ -1\right] * \left[-1\ 1\right] = \left[1\ -2\ 1\right]
+\]
+
+Remember, that in Fourier transforms, we move from the time domain, to the frequency domain. The DFT: \[
+    F \left(\omega\right) = \displaystyle\sum_{x = 0}^{N - 1}f \left(x\right) e^{-\displaystyle\frac{2\pi i x \omega}{N}}
+\]
+and IDFT: \[
+    f \left(\omega\right) = \displaystyle\frac{1}{N}\displaystyle\sum_{\omega = 0}^{N - 1}F \left(\omega\right) e^{\displaystyle\frac{2\pi i x \omega}{N}}
+\]
+The image derivative is the inverse FT of the weighted frequency domain. High frequencies affect the image derivative
+more than low frequencies. This causes problems, since noise has more high frequency than normal image. \[
+    \displaystyle\frac{\partial f \left(x, y\right)}{\partial x} = \displaystyle\frac{2 \pi i}{N} \cdot \Phi^{-1}
+    \left(u \cdot \Phi \left(f \left(x, y\right)\right)\right)
+\]
+The problem with noise is that it can affect the second derivative so much, that the second derivative just looks like
+random noise. We would like to reduce the effects of noise on the derivative, but symmetric smoothing may eliminate the
+derivative response altogether. To resolve this, we use Sobel kernels, where we smooth the image in one direction, and compute
+the derivative in the orthogonal direction. The Sobel kernels are as follows: 
+\begin{align*}
+    \displaystyle\frac{\partial f}{\partial x} &= \begin{bmatrix}
+        1 & 0 & -1 \\
+        2 & 0 & -2 \\
+        1 & 0 & -1
+    \end{bmatrix}  \\
+        \displaystyle\frac{\partial f}{\partial y} &= \begin{bmatrix}
+            1 & 2 & 1 \\
+            0 & 0 & 0 \\
+            -1 & -2 & -1
+        \end{bmatrix}
+\end{align*}
+Note that if we convolve a smoothing kernel with a derivative kernel: \[
+    f * \begin{bmatrix}
+        1 \\
+        2 \\
+        1 \\
+    \end{bmatrix} * \left[1\ 0\ -1\right] = f * \begin{bmatrix}
+        1 & 0 & -1 \\
+        2 & 0 & -2 \\
+        1 & 0 & -1
+    \end{bmatrix}
+\]
+% subsection Second derivative approximation (end)
+% section Image Derivatives (end)
+
+\section{Fourier Transform}\label{sec:fourier_transform} % (fold)
+
+\begin{theorem}[Convolution theorem]
+    \begin{align*}
+        \Phi \left(f * g\right) &= F \cdot G
+        \Phi \left(f \cdot g\right) &= F * G
+    \end{align*}
+\end{theorem}
+So, to convolve by Fourier: \[
+    f * g = \Phi^{-1} \left(F \cdot G\right)
+\]
+This has the complexity of $O \left(n \log \left(n\right)\right)$, thanks to the FFT, where $n$ is the number of pixels
+in the image. So we see, different FT phenomena can be explained by convolution, and vice versa. We use this Fourier
+interpretation in order to design convolution filters. 
+% section Fourier Transform (end)
+
+\section{Sharpening}\label{sec:sharpening} % (fold)
+We have used various methods to enhance images. From the first tutorial, we used histogram equalisation. We also learnt
+in the lecture about smoothing, and median filtering (the salt and pepper thing). We will also discuss sharpening.
+
+\subsection{Laplacian subtraction}\label{sub:laplacian_subtraction} % (fold)
+The laplacian: \[
+    \nabla^2 f = \displaystyle\frac{\partial^2 f}{\partial x^2} + \displaystyle\frac{\partial^2 f}{\partial y^2}  
+\]
+Or in matrix form: \[
+    \begin{bmatrix}
+        0 & 1 & 0 \\
+        1 & -4 & 1 \\
+        0 & 1 & 0 \\
+    \end{bmatrix}
+\]
+We can then subtract this from the image, and sharpen the image, reducing its smoothing. It should however be noted,
+that while this does enhance the details, it also enhances the noise, which is less than ideal.
+
+% subsection Laplacian subtraction (end)
+% section Sharpening (end)
+
+\section{Edge detection}\label{sec:edge_detection} % (fold)
+We can use the gradient for edge detection. If we take the gradient of an image, then there are a number of pixels
+between the maximum, and 0. As a result we have a lot of lit up pixels that are not the edge. What we can do is set some
+sort of boundary, and convert the gradient into a binary image, where pixels with values above the binary are set to 1,
+and others are set to 0.
+
+Edges generally involve a diagonal line, crossing from one level, to another. As a result, the first derivative will be
+a square wave over this transition, and the second derivative will be two hard peaks at the change points of the square
+wave.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_4_derivative_at_edge}
+    \caption{Derivative response at edges}
+\end{figure}
+% section Edge detection (end)
+
+\end{document}
