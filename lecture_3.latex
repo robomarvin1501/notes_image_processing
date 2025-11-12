@@ -184,7 +184,23 @@ The $F$ term is constant, and then we may differentiate the $e$ term. \begin{ali
 So the derivatives \textbf{increase} the high frequencies, since $F \left(u\right) \to u F \left(u\right)$. The highest
 frequencies are always the noise. 
 
-% TODO 20, 21
+To compute the $x$ derivative of $f \left(x, y\right)$ using Fourier, we \begin{enumerate}
+    \item Compute the Fourier transform $F \left(u, v\right)$
+    \item Multiply the Fourier coefficient $F \left(u, v\right)$ by $\displaystyle\frac{2\pi i}{N}u$
+    \item Compute the inverse Fourier Transform
+\end{enumerate}
+and to compute the $y$ derivative of $f \left(x, y\right)$: \begin{enumerate}
+    \item Compute the Fourier transform $F \left(u, v\right)$
+    \item Multiply the Fourier coefficient $F \left(u, v\right)$ by $\displaystyle\frac{2\pi i}{N}v$
+    \item Compute the inverse Fourier Transform
+\end{enumerate}
+
+The derivative can also just be a Fourier filter: \[
+    f' \left(x\right) = \displaystyle\frac{2 \pi i}{N} \displaystyle\sum_{u}^{}u F \left(u\right)
+    e^{\displaystyle\frac{2 \pi i u x}{N}}
+\]
+We multiply the Fourier Coefficient $F \left(u\right)$ with $\displaystyle\frac{2 \pi i u x}{N}$. This amplifies higher
+frequencies (and noise, since noise normally has higher frequencies). 
 
 \begin{figure}[H]
     \center
