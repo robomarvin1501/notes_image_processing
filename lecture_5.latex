@@ -141,5 +141,74 @@ Finally, sum all levels in $L_c$ to get the blended image.
 % subsection Merging images (end)
 % section Image Pyramids (end)
 
+\section{Image denoising}\label{sec:image_denoising} % (fold)
+This has been particularly important of late, since all image generation AI does is it takes a noisy image, and denoises
+it until it gets the desired image.
+
+We have a few quality measures for restoration. Given the original image $I \left(x, y\right)$, restored to $\hat{I}
+\left(x, y\right)$. In real life, $I \left(x, y\right)$ is unknown, but known for testing. Our assumption is Additive
+White Gaussian Noise (AWGN). Mean squared error is defined as follows: \[
+    MSE = \displaystyle\frac{1}{N^2} \displaystyle\sum_{x, y}^{} \left|\left|I \left(x, y\right) - \hat{I} \left(x,
+    y\right)\right|\right|^2
+\]
+We also have Peak Signal to Noise Ratio: \[
+    PSNR = 20 \log_{10} \left(\displaystyle\frac{255}{\sqrt{MSE} }\right)
+\]
+
+What if the noise changes regularly, then we have patch method: Non local means. Assume a static scene, giving a
+constant signal $x \left(y\right)$. Multiple images $y \left(t\right)$ are captured at different times \[
+    y \left(t\right) = x \left(t\right) + n \left(t\right)
+\]
+The noise $n \left(t\right)$ varies over time with a mean of $0$. As a result, we can add these all together, and it
+will converge on the original image. When the variance of each variable \[
+    \left\{X_i\right\}_{i = 1}^{n} = \sigma^2
+\]
+Then the variance of their mean is $\displaystyle\frac{\sigma^2}{n}$. An example of this is when looking at stars. The
+stars are static in the sky, but the atmosphere adds noise, that changes between \enquote{time steps}. \\
+
+We can all find similar patches in an image (like many parts of the ocean), average them, and use this as weights to
+remove noise. To do this: \begin{enumerate}
+    \item Given one pixel, compute the similarity of a patch around it to patches around \textbf{all other} pixels.
+    \item Compute a weighted average of pixels, based on the patch similarity. 
+    \item Replace the pixel value by this average \[
+            \hat{x} \left(m, n\right) = \displaystyle\frac{1}{c \left(m, n\right)} \displaystyle\sum_{i, j}^{}y \left(i,
+            j\right) e^{- \left(SSD \left(N \left(m, n\right) - N \left(i, j\right)\right)\right)}
+        \]
+        Where $y$ is the input image, $\hat{x}$ the output, and $N \left(i, j\right)$ is a neighbourhood around pixel
+        $i, j$
+\end{enumerate}
+This is equivalent to \begin{align*}
+    \hat{x} \left(m, n\right) &= \displaystyle\frac{1}{c \left(m, n\right)} \displaystyle\sum_{i, j}^{}y \left(i,
+    j\right) w \left(m, n, i, j\right) \\
+    w \left(m, n, i, j\right) &= e^{- \displaystyle\frac{\left(SSD \left(N \left(m, n\right) - N \left(i,
+    j\right)\right)\right)}{2\sigma^2}}
+\end{align*}
+Where we choose a $\sigma^2$ that gives a good result. The pixel value at $\left(m, n\right)$ is the average of all other pixels
+$\left(i, j\right)$ in the image, weighted by $w \left(m, n, i, j\right)$. The weights are computed from Sum of Square
+Differences (SSD) between neighbourhoods of $\left(m, n\right)$, and of $\left(i, j\right)$, $N \left(m, n\right)$, etc.
+SSD can have equal weights for all pixels in $N \left(m, n\right)$, or Gaussian weights, where the centre pixel has a
+higher weight, or neighbourhoods can be normalised by mean and variance. 
+
+This is called Non Local Means. NLM is one of a family of patch based noise cleaning methods. Variations include other
+similarity measures between patches, replacing the SSD, define search areas for patches, E.g. search also in other
+frames (Google’s Night-Sight), and methods to replace averaging, E.g. Multi-frame super- resolution (Google’s
+Night-Sight).
+
+\subsection{Night sight}\label{sub:night_sight} % (fold)
+Google's Night Sight was developed by Yael Pritch, who studied this course some yeras ago. The traditional approach is
+to use very long exposure. This is, quite obviously, bad. \begin{itemize}
+    \item Take multiple pictures (6 - 15)
+    \item Exposure time is determined from motion (for example, from the gyro)
+    \item Before averaging, perform alignment between pictures to compensate for motion 
+    \item Combine overlapping patches using multi frame super resolution approach 
+    \item Colour correction
+\end{itemize}
+This leaves us with the problem of how to focus? Well, we failed to answer this in the lecture. I presume that an amount
+of work is done with trying to take each image as focused as you can, and the overlapping patches can have focusing work
+done to them I guess.
+% subsection Night sight (end)
+
+% section Image denoising (end)
+
 
 \end{document}
