@@ -1,0 +1,145 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 5}
+\author{Gidon Rosalki}
+\date{2025-11-16}
+
+
+\begin{document}
+\maketitle
+
+\section{Image Pyramids}\label{sec:image_pyramids} % (fold)
+Let us consider a picture $N \times N$. If we want to store lower resolution copies, of half the size each time, then we
+need a total of \[
+    N^2 + \displaystyle\frac{1}{4}N^2 + \displaystyle\frac{1}{16}N^2 + \dots = 1 \displaystyle\frac{1}{3} N^2
+\]
+There are naturally only $\log \left(N\right)$ levels. 
+
+While we will only talk about resizing by $\displaystyle\frac{1}{2}$, all scales are possible. To resize by
+$\displaystyle\frac{1}{2}$, we blur, and subsample every 2nd pixel in every second row. To perform an arbitrary
+resizing, it is a pain to do this kind of blurring and resizing, so we instead perform a Fourier transform. For
+instance, to convert from $N \times N$ to $K \times K$, we take the Fourier transform, and cut the spectrum down to a
+$K \times K$ image, which is the $K$ highest frequencies, and then perform the inverse Fourier, and recreate the lower
+resolution image. 
+
+\subsection{Uses}\label{sub:uses} % (fold)
+A first use of these image pyramids is efficient visual searches. Searching is dependent on the area, and the pattern
+size. Given a $256^2$ pixel image, and a search are of $32^2$, we need $2^{26}$ total operations. We can instead use
+pyramids to start the search in a small image, and given an estimate from a lower resolution level, search the small
+surrounding area in higher resolution levels, and work our way up until we find the image in the largest level.
+
+They are also useful in browsing image databases, to show multiple images or videos, or for motion computation,
+stitching, and more. Consider a security system, with 3000 cameras. Instead of viewing 3000 screens, we can fit many
+streams on a single screen.
+% subsection Uses (end)
+
+\subsection{Resizing}\label{sub:resizing} % (fold)
+To reduce an image, we first blur (it can sometimes be decomposed into horizontal, and vertical). A method of this is to
+convolve with a $3 \times 3$ filter, or a $5 \times 5$ filter, or larger. We then subsample, by selecting only every 2nd
+pixel, in every second row. \\ 
+To expand, we add zero padding in every second pixel, in every second row, and then blur. The expanding blur needs
+different normalisations, due to zero padding.
+
+For blur kernel, we commonly use binomial coefficients of odd lengths (in order to have a centre pixel). The sum of the
+coefficients is normalised to 1. We do this since it is fast to compute, by using shifts, and integer addition. It is
+also asymptotically similar to the Gaussian. It can also be decomposed into 2 convolutions, for example \begin{align*}
+    P \cdot \displaystyle\frac{1}{256}\begin{bmatrix}
+        1 & 4 & 6 & 4 & 1 \\
+        4 & 16 & 24 & 16 & 4 \\
+        6 & 24 & 36 & 24 & 6 \\
+        4 & 16 & 24 & 16 & 4 \\
+        1 & 4 & 6 & 4 & 1 \\
+    \end{bmatrix} = P \cdot \displaystyle\frac{1}{16} \begin{bmatrix}
+        1 \\
+        4 \\
+        6 \\
+        4 \\
+        1 \\
+    \end{bmatrix} \cdot \displaystyle\frac{1}{16} \cdot \left[1\ 4\ 6\ 4\ 1\right]
+\end{align*}
+This saves many computations with comparison to say a $5 \times 5$ kernel. The naïve computation blurs $5 \times 5$,
+with 25 multiplications, but if the kernel can be decomposed into horizontal and vertical components, then we blur
+columns (5 multiplications), and then blur the rows (5 multiplications), resulting in a total of 10 multiplications,
+instead of 25. \\ 
+
+To handle the edges, we will never make it cyclic. This was discussed in the last lecture, but we can reflect the last
+pixel, use zero padding, or perhaps duplicate the last pixel. We also sometimes just remove the problematic rows /
+columns, which is most useful for very large images, where it matters not if we lose a couple of rows / columns each
+time.
+
+A \textbf{Laplacian Pyramid} is a series where we call $G_n$ the Gaussian, with $n$ representing the top level, and
+$L_n$ the Laplacian, where $L_i = G_i - Expand \left(G_{i + 1}\right)$. As a result $L_{n} + L_{n - 1} = G_{n - 1}$. By
+storing the Laplacian pyramid, which is much less data, we can thus compress an image, where we compress the Laplacian
+pyramid using Huffman or something, and can reconstruct the data subsequently. 
+% subsection Resizing (end)
+
+\subsection{Merging images}\label{sub:merging_images} % (fold)
+Splines! He didn't define clearly: For the images $A$, $B$, and every row $y$ \[
+    C \left(x, y\right) = h \left(x\right) A \left(x, y\right) + \left(1 - h \left(x\right)\right) B \left(x, y\right)
+\]
+A multiresolution pyramid spline is as follows: Given two images $A$ and $B$ to be splined in middle. Construct
+Laplacian Pyramid $L_a$ and $L_b$, and create a third Laplacian Pyramid $L_c$ where for each
+level $k$: \begin{align*}
+    L_c = \begin{cases}
+        L_a \left(i, j\right), &\text{ if }i < \frac{width}{2} \\
+        \frac{L_a \left(i, j\right) + L_b \left(i, j\right)}{2}, &\text{ if } i = \frac{width}{2} \\
+        L_b \left(i, j\right), &\text{ if } i > \frac{width}{2}
+    \end{cases}
+\end{align*} 
+Finally, sum all levels in $L_c$ to get the merged image.
+
+We can thus combine images seamlessly using these techniques as you can see below: 
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_5_merged_image}
+    \caption{Merged image}
+\end{figure}
+
+
+To blend arbitrary shapes: Given two images $A$, and $B$, and a binary mask $M$, construct
+Laplacian Pyramid $L_a$ and $L_b$, and create a third Laplacian Pyramid $L_c = M - G_m$, where for each level $k$:
+\begin{align*}
+    L_c \left(i, j\right) = G_m \left(i, j\right)L_a \left(i, j\right) + \left(1 - G_m \left(i, j\right)\right) L_b
+    \left(i, j\right)
+\end{align*}
+Finally, sum all levels in $L_c$ to get the blended image.
+% subsection Merging images (end)
+% section Image Pyramids (end)
+
+
+\end{document}
