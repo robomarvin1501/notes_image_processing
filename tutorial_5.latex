@@ -1,0 +1,407 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 5 - 2D transformations}
+\author{Gidon Rosalki}
+\date{2025-11-19}
+
+
+\begin{document}
+\maketitle
+We are now moving to the second part of the course, where the lectures and tutorials will discuss different things. The
+main focus of this point is making panoramas.
+
+\section{Ex3 blending}\label{sec:ex_blending} % (fold)
+This exercise is a classic exercise, many years in the course, where we perform what we discussed at the end of the last
+exercise, where we take 2 images, a mask, and use image pyramids to join them together.
+% section Ex3 blending (end)
+
+\section{2D transformations}\label{sec:_d_transformations} % (fold)
+\subsection{Warping}\label{sub:warping} % (fold)
+To warp images we have discussed things like filtering, where given an image, we apply a function to each pixel, which
+transforms it. This mostly focused on changing the \textit{intensities}. We will now switch to focusing on
+\textit{warping} where we will instead change the \textit{coordinates} of the pixels. We will not talk about non-linear
+transformations, such as where we expand one part of the image, and shrink other parts simultaneously. Linear indicates
+that the same operation is performed on every part of the image.
+
+A transformation $T$ is a coordinate changer \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = T \left(\begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}\right)
+\]
+Where $T$ is global, meaning that it has the same form for every point $p$, and is determined by just a few numbers.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_5_parametric_warps}
+    \caption{Examples of parametric warps}
+\end{figure}
+
+A \textit{translation} of a coordinate would mean adding a scalar to each of its components. \textit{Scaling} it would
+mean multiplying each of its components by a scalar, where it is \textit{uniform} when it is the same for all
+components (dimensions). \textit{Non uniform scaling} means we scale different amounts in different components
+(dimensions). The sscaling operation \begin{gather*}
+    x' = ax \\ 
+    y' =  by
+\end{gather*}
+can be given in matrix form \begin{gather}
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        a & 0 \\
+        0 & b
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\end{gather}
+
+To perform a rotation by $\theta$ we perform \begin{gather}
+    x' = x \cos \left(\theta\right) - y \sin \left(\theta\right)
+    y' = x \sin \left(\theta\right) + y \cos \left(\theta\right)
+\end{gather}
+If we instead define \begin{align*}
+    x &= r \cos \left(\phi\right) \\
+    y &= r \sin \left(\phi\right) \\ 
+    \implies x' = r \cos \left(\phi + \theta\right) \\
+    \implies y' = r \sin \left(\phi + \theta\right) \\
+\end{align*}
+This is easy to capture in matrix form: \begin{gather}
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        \cos \left(\theta\right) & -\sin \left(\theta\right) \\
+        \sin \left(\theta\right) & \cos \left(\theta\right)
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\end{gather}
+Even though $\sin$ and $\cos$ are not linear functions of $\theta$, both $x'$ and $y'$ are a \textbf{linear}
+combinations of $x$ and $y$. The inverse transformation is a rotation by $-\theta$, so for rotation matrices, since
+$\det \left(R\right) = 1$, it holds that $R^{-1} = R^T$.
+% subsection Warping (end)
+
+\subsection{2x2 Matrices}\label{sub:_x_matrices} % (fold)
+What can we represent by a 2x2 matrix? There's obviously the identity \[
+    \begin{bmatrix}
+        1 & 0 \\
+        0 & 1
+    \end{bmatrix}
+\]
+a 2D scale around $\left(0, 0\right)$: \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        s_x & 0 \\
+        0 & s_y
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\]
+a 2D rotation around $\left(0, 0\right)$: \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        \cos \left(\theta\right) & - \sin \left(\theta\right) \\
+        \sin \left(\theta\right) & \cos \left(\theta\right)
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\]
+and a 2D shear along the $x$ axis: \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        1 & sh_x \\
+        sh_y & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\]
+We can also mirror across the $y$ axis: \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        -1 & 0 \\
+        0 & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\]
+or even mirror across $\left(0, 0\right)$: \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+    \end{bmatrix} = \begin{bmatrix}
+        -1 & 0 \\
+        0 & -1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix}
+\]
+
+Can we perform a 2D translation with a 2x2 matrix? No, since it is a non-linear transformation due to $T \left(0\right)
+\ne 0$. Linear transformations are combinations of scale, rotation, and shear. The properties of linear transformations
+are \begin{itemize}
+    \item Origin maps to origin
+    \item Lines map to lines
+    \item Parallel lines remain parallel
+    \item Ratios are preserved along lines
+    \item Closed under composition:
+    \item Easy to find inverse when non-singular 
+\end{itemize}
+In order to represent translation as a 3x3 matrix, we need to add a third coordinate to every 2D point. To do this, we
+need to represent coordinates in 2 dimensions, with a vector of 3 components. \begin{gather}
+    \begin{bmatrix}
+        x \\
+        y \\
+    \end{bmatrix} \to \begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} \\ 
+    \begin{bmatrix}
+        x \\
+        y \\
+        w \\
+    \end{bmatrix} \to \begin{bmatrix}
+        \frac{x}{w}  \\
+        \frac{y}{w}  \\
+    \end{bmatrix}
+\end{gather}
+Scalar multiplication does not change this. Multiplying everything here by $\lambda$ is still equivalent to $\begin{bmatrix}
+    x \\
+    y \\
+\end{bmatrix}$. \\
+% subsection 2x2 Matrices (end)
+\subsection{Homogeneous coordinates}\label{sub:homogeneous_coordinates} % (fold)
+Adding a third coordinate $w$ represents a point at $\left(\frac{x}{w}, \frac{y}{w} \right)$. $w = 0$ implies a point at
+$\infty$, and $\left(0, 0, 0\right)$ is not allowed. This is a convenient system to allow more useful transformations. 
+
+An example translation would be \begin{gather}
+    \begin{bmatrix}
+        x' \\
+        y' \\
+        1 \\
+    \end{bmatrix} = \begin{bmatrix}
+        1 & 0 & t_x \\
+        0 & 1 & t_y \\
+        0 & 0 & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} = \begin{bmatrix}
+        x + t_x \\
+        y + t_y \\
+        1 \\
+    \end{bmatrix}
+\end{gather}
+Where the 1s are called homogeneous coordinates. So, our basic 2D transformations can all be performed in the 3D world,
+with 3x3 matrices: \begin{gather}
+    \text{Translate: }\begin{bmatrix}
+        x' \\
+        y' \\
+        1 \\
+    \end{bmatrix} = \begin{bmatrix}
+        1 & 0 & t_x \\
+        0 & 1 & t_y \\
+        0 & 0 & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} \\ 
+\text{Scale: }\begin{bmatrix}
+        x' \\
+        y' \\
+        1 \\
+    \end{bmatrix} = \begin{bmatrix}
+        s_x & 0 & 0 \\
+        0 & s_y & 0 \\
+        0 & 0 & 1
+    \end{bmatrix}\begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} \\
+\text{Rotate: }\begin{bmatrix}
+        x' \\
+        y' \\
+        1 \\
+    \end{bmatrix} = \begin{bmatrix}
+        \cos \left(\theta\right) & - \sin \left(\theta\right) & 0 \\
+        \sin \left(\theta\right) & \cos \left(\theta\right) & 0 \\
+        0 & 0 & 1
+    \end{bmatrix}\begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} \\
+\text{Shear: }\begin{bmatrix}
+        x' \\
+        y' \\
+        1 \\
+    \end{bmatrix} = \begin{bmatrix}
+        1 & sh_x & 0 \\
+        sh_y & 1 & 0 \\
+        0 & 0 & 1
+    \end{bmatrix}\begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} \\
+\end{gather}
+
+We can combine together these matrices through matrix multiplication. However, it is important to remember that matrix
+multiplication is \textbf{not} commutative, and so the order is of utmost importance. 
+% subsection Homogeneous coordinates (end)
+
+\subsection{Transformations}\label{sub:transformations} % (fold)
+\textbf{Rigid transformations} are a combination of translation, and rotation that preserves all information, aside from orientation (so that's the
+length, the angles, and so on).  \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+        w \\
+    \end{bmatrix} = \begin{bmatrix}
+        \cos \left(\theta\right) & -\sin \left(\theta\right) & t_x \\
+        \sin \left(\theta\right) & \cos \left(\theta\right) & t_y \\
+        0 & 0 & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+        w \\
+    \end{bmatrix}
+\]
+It takes 3 parameters, $\left(t_x, t_y, \theta\right)$. Given a pair of images, where this has been performed, to find
+$\theta$, we take two points that are the same between the images, and find the vector between them. We can then find
+the $\theta$ between them \[
+    \theta = \arccos \left(\displaystyle\frac{a \cdot b}{\left|\left|a\right|\right| \left|\left|b\right|\right|}\right)
+\]
+A \textbf{similarity transformation} is very similar (har har), but is a combination of translation, rotation,
+\textit{and} uniform scaling: \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+        w \\
+    \end{bmatrix} = \begin{bmatrix}
+        s \cos \left(\theta\right) & -s \sin \left(\theta\right) & t_x \\
+        s \sin \left(\theta\right) & s \cos \left(\theta\right) & t_y \\
+        0 & 0 & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+        w \\
+    \end{bmatrix}
+\]
+So here there are 4 parameters: $\left(s, t_x, t_y, \theta\right)$. This preserves proportions (like the ratio between
+two lengths), and angles, but not the lengths or orientation. This is most obvious when a camera is scanning a plane
+\textit{in parallel} (ie, not rotation, just moving horizontally in front of an image).
+
+Next is \textbf{affine transformations}. This is a combination of translation with all 2D linear transformations
+(rotation, scaling, and shear). \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+        w \\
+    \end{bmatrix} = \begin{bmatrix}
+        a & b & c \\
+        d & e & f \\
+        0 & 0 & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+        w \\
+    \end{bmatrix}
+\]
+This takes 6 parameters, and only preserves parallelism, and the ratio of edges. Finally, we have \textbf{projective
+transformations}, which are affine transformations + projective warps. It maps the points from a 2D plane onto another 2D
+plane \[
+    \begin{bmatrix}
+        x' \\
+        y' \\
+        w \\
+    \end{bmatrix} = \begin{bmatrix}
+        a & b & c \\
+        d & e & f \\
+        g & h & 1
+    \end{bmatrix} \begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix}
+\]
+It takes 8 parameters (the 9th is redundant, since we use homogeneous coordinates), and \textbf{only} preserves straight
+lines (not parallelism, angles, or anything else).
+
+We can use this to remove perspective distortion: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_5_perspective_distortion}
+    \caption{Removing perspective distortion}
+\end{figure}
+
+All of the transformations that we have discussed are a nested set of groups, where each of them is closed under
+composition, and is invertible.
+% subsection Rigid transformations (end)
+
+% section 2D transformations (end)
+
+\section{Warping}\label{sec:warping} % (fold)
+
+% section Warping (end)
+
+\section{Feature points}\label{sec:feature_points} % (fold)
+
+% section Feature points (end)
+
+\end{document}
