@@ -397,11 +397,106 @@ composition, and is invertible.
 % section 2D transformations (end)
 
 \section{Warping}\label{sec:warping} % (fold)
+Given a coordinate transformation $T$, and a source image $f \left(x, y\right)$, we compute a transformed image
+$g \left(x', y'\right) = f \left(x, y\right)$ by sending each pixel to its corresponding location \[
+    \left(x', y'\right) = T \left(x, y\right)
+\]
+If a pixel lands \enquote{between} two pixels, then we distribute its colour among the neighbouring pixels of $\left(x',
+y'\right)$, which is known as \textit{splatting}. When we scale an image by a factor of two, then there are holes every
+second pixel, so we \textit{interpolate} its colour value from its neighbours.
 
+With regard to forward, vs inverse warping, we usually say that inverse is better, since it eliminates holes. However,
+it requires an invertible warp function, which is not always available. To warp using Python, we avoid loops using
+np.meshgrid to represent image vertices, transform coordinates using homography, and use map\_coordinates() from
+scipy.ndimage to perform the interpolation.
 % section Warping (end)
 
 \section{Feature points}\label{sec:feature_points} % (fold)
+\subsection{Outline}\label{sub:outline} % (fold)
+\begin{itemize}
+    \item Motivation for using image features (like feature based alignment)
+    \item Desired properties of features
+    \item Feature detectors (like the Harris corner detector, and the scale invariant version)
+    \item Feature descriptors (MOPS: Multi-scale oriented patches, and SIFT: Orientation histograms (relative to key
+        point orientations))
+\end{itemize}
 
+In order to align 2 images automatically, we have 2 broad approaches. There is direct (pixel based) alignment, where we
+search for alignment where most pixels agree. This is less suitable for overlapping images like a photo based panorama,
+since there is a limited range of convergence. We also have feature based alignment, where we find a few matching
+features in both images, and compute the alignment. 
+% subsection Outline (end)
+
+\subsection{Feature based alignment}\label{sub:feature_based_alignment} % (fold)
+To match with features we \begin{enumerate}
+    \item Detect feature points in both images 
+    \item Build a descriptor from each point 
+    \item Find corresponding pairs 
+    \item Use these pairs to align images (using transformations discussed earlier)
+\end{enumerate}
+
+Our first problem with this approach is that we need to detect \textit{the same} points \textit{independently} in both
+images. If we detect different features, then there is no chance we are going to match the images. Our second problem
+is that for each point, we need to correctly recognise the corresponding point, so we need a \textbf{reliable} and
+\textbf{distinctive} descriptor. Our desired properties when matching with features are ease of extraction, invariance,
+meaning we need to tolerate changes in noise, illumination, scaling, rotation / translation, viewing direction, and so
+on. Finally, they need to be easy to match against a large database of object features. 
+
+\subsubsection{Detect feature points in both images}\label{sec:detect_feature_points_in_both_images} % (fold)
+This is a method called a Harris corner detector. We should easily recognise the point by looking through a small window
+and shifting it. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_5_detector_basic_idea}
+    \caption{Recognition of points}
+\end{figure}
+We can now use a lot of mathematics, which I cannot be arsed to replicate, with Fourier transforms, and local Taylor
+approximations of the derivative, giving us an approximation of the importance of a window in an image: \begin{gather}
+    M = \begin{bmatrix}
+        \displaystyle\sum_{\left(x, y\right) \in W}^{}I_x^2 & \displaystyle\sum_{\left(x, y\right) \in W}^{}I_xI_y \\
+        \displaystyle\sum_{\left(x, y\right) \in W}^{}I_xI_y & \displaystyle\sum_{\left(x, y\right) \in W}^{}I_y^2 \\
+    \end{bmatrix} \\
+    E \left(u, v\right) \approx \left(u, v\right)M \begin{bmatrix}
+        u \\
+        v \\
+    \end{bmatrix}
+\end{gather}
+To find the directions that result in the largest and smallest $E$ values, we may look at the \textbf{eigenvectors} of
+$M$. Let $\lambda_1, \lambda_2$ be the eigenvalues, corresponding to $\left(u_1, v_1\right), \left(u_2, v_2\right)$.
+Then the major axis is in the direction of $\left(u_1, v_1\right)$, proportional to $\lambda_1$, and the minor axis is
+in the direction of $\left(u_2, v_2\right)$, proportional to $\lambda_2$. \\ 
+Commonly used measures of corner response are \begin{gather}
+    R_N = \displaystyle\frac{Det \left(M\right)}{Trace \left(M\right)} = \displaystyle\frac{\lambda_1
+    \lambda_2}{\lambda_1 + \lambda_2} \\ 
+    R_H = Det \left(M\right) - k Trace \left(M\right)^2
+\end{gather}
+$M$ is composed of combinations of derivatives: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_5_m_deriv_combs}
+    \caption{Derivative composition of $M$}
+\end{figure}
+
+We may state that our algorithm is \begin{itemize}
+    \item Compute the corner response $R$
+    \item Find points with a large corner response, i.e. where $R > $ the threshold
+    \item Take only the points of local maxima of $R$
+\end{itemize}
+% subsubsection Detect feature points in both images (end)
+
+\subsubsection{Some properties}\label{sec:some_properties} % (fold)
+The corner response is invariant to rotation, since the eigenvalues will remain the same. There is also a partial
+invariance to a change in intensity. Since only the derivatives are used, there is invariance to intensity shift, but
+not so much to a scale (where we multiply by a scalar), since this might encourage more / less points to pass the
+threshold. However, it is \textbf{not} invariant to geometric scale. A very small corner, which might be classified as a
+single edge, when scaled up will result in \textbf{many} points classified as edges. To make it invariant to geometric
+scale, consider regions (e.g. circles) of different sizes around a point. Regions of corresponding sizes will look the
+same in both images. We choose the scale of the \enquote{best} corner in order to choose the corresponding circles
+independently in each image. 
+% subsubsection Some properties (end)
+% subsection Feature based alignment (end)
 % section Feature points (end)
+
+Next week we will discuss MOPS and SIFT.
 
 \end{document}
