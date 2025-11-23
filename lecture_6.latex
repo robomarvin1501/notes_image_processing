@@ -156,11 +156,97 @@ So, writing it in the simple form, we get the error function \begin{align*}
 Where $I_x$ is the $x$ derivative of $I_2$, $I_y$ is the $y$ derivative of $I_2$, and $I_t$ is the image difference $I_2
 - I_1$. We are looking to find $\left(u, v\right)$ which minimise the error function. The same $\left(u, v\right)$ will
 approximately minimise the Taylor approximation, but it is only accurate for very small values of $\left(u, v\right)$,
-on the order of a single pixel, since it is only the first order Taylor approximation.
+on the order of a single pixel, since it is only the first order Taylor approximation. For larger values of $\left(u,
+v\right)$, we have the iterative approach.
 
 % subsubsection Alignment by error minimisation (end)
 
+\subsubsection{Iterative approach}\label{sec:iterative_approach} % (fold)
+We compute the image derviatives $I_x, I_y$, and set $u, v$ both to 0. Compute once \[
+    A = \begin{bmatrix}
+        \displaystyle\sum_{}^{}I_x \cdot I_x & \displaystyle\sum_{}^{}I_x \cdot I_y \\
+        \displaystyle\sum_{}^{}I_y \cdot I_x & \displaystyle\sum_{}^{}I_y \cdot I_y \\
+    \end{bmatrix}
+\]
+We iterate until convergence ($I_t \approx 0$), by \begin{enumerate}
+    \item Compute $b = \begin{bmatrix}
+        \displaystyle\sum_{}^{}I_x \cdot I_t  \\
+        \displaystyle\sum_{}^{}I_y \cdot I_t 
+        \end{bmatrix}$
+    \item Solve the equations to compute the residual motion $A \cdot \begin{bmatrix}
+        du \\ 
+        dv
+        \end{bmatrix} = -b$
+    \item Update motion $u, v$ with residual motion $u += du,\ v += dv$
+    \item Warp $I_2$ towards $I_1$ with total motion $\left(u, v\right)$
+\end{enumerate}
+
+The power of iterations allows us to compute the derivatives only once on $I_1$. There are two stages in each iteration,
+motion estimation (solving equations), and warping $I_2$ (usually backwards). This works even with poor motion
+estimation, as long as it reduces the overall error. Warping of one image towards the other is done from the original
+image using total motion, and not from previous image using residual motion. Repetitive warping blurs.
+% subsubsection Iterative approach (end)
+
+\subsubsection{Multiresolution}\label{sec:multiresolution} % (fold)
+Lucas-Kanade assumes that corresponding pixels in the two images have same derivative. It works OK even if derivatives
+are similar. However, this fails for very large motions. So, reducing the resolution blurs the images, creating similar
+derivatives, even for larger motions.
+
+If we compare feature points to LK, we find that in both cases we go over the image to compute partial derivatives. As a
+result, there is a very similar complexity. When uniquely identifiable features points can be found, then they are
+better, as they can be used to compute homographies. However, in blurry images, feature points may be difficult to find,
+and so LK may be preferable. Overall, LK is more accurate in translation.
+% subsubsection Multiresolution (end)
+
 % subsection Computing global translation (end)
+
+\subsection{Optical flow}\label{sub:optical_flow} % (fold)
+Optical flow is when there is an individual motion for each pixel (like when there is parallax, or independently moving
+objects). 
+
+We have some key assumptions (shocking nobody): \begin{itemize}
+    \item Colour consistency, there is no change in colour (this is changed to brightness in greyscale images)
+    \item Small motion: The points do not move very far
+\end{itemize}
+
+Examining small windows around a pixel may not provide accurate motion. Consider a line that passes beyond the window.
+We would be unable to differentiate between the line translating to the left, and translating up and to the left. This
+is called the \textbf{aperture problem}.
+
+\subsubsection{Correlation based optical flow}\label{sec:correlation_based_optical_flow} % (fold)
+For each small region in one image, we search for the best correlation in the second image. This assumes that we do not
+move too much, and thus do not need to search the entire image. If there is a large region, then there is a higher
+probability of recognising accurate motion, but there will also be poor localisation (poor knowledge of what moved). A
+smaller region results in better localisation, but poorer knowledge of motion. We use pyramids to reduce the search
+area.
+% subsubsection Correlation based optical flow (end)
+
+\subsubsection{Correlation based pyramids for optical flow}\label{sec:correlation_based_pyramids_for_optical_flow} % (fold)
+To perform this we create two Gaussian pyramids from the two input images, compute the optical flow using $5 \times 5$
+regions on the smallest pyramid level, smooth the optical flow and use it as an initial guess for higher resolutions,
+and continue to the next level, searching close to the guess from the higher resolution.
+% subsubsection Correlation based pyramids for optical flow (end)
+
+\subsubsection{Gradient based optical flow}\label{sec:gradient_based_optical_flow} % (fold)
+Here, we compute $\left(u, v\right)$ using Lucas-Kanade between two corresponding regions. \begin{itemize}
+    \item Large region: Accurate motion. Poor localization.
+    \item Small region: Good localization. Poor motion.
+\end{itemize}
+We use pyramids to reduce search area.
+% subsubsection Gradient based optical flow (end)
+
+\subsubsection{Pyramids and iterative refinement}\label{sec:pyramids_and_iterative_refinement} % (fold)
+\begin{itemize}
+    \item Create two Gaussian pyramids from the two input images
+    \item Iterative Lukas-Kanade on smallest images \begin{enumerate}
+        \item Estimate velocity at each pixel by solving Lucas- Kanade equations in its neighborhood
+        \item Warp I2 towards I1 using the estimated flow field
+        \item Repeat until convergence
+    \end{enumerate}
+    \item Continue to next pyramid level.
+\end{itemize}
+% subsubsection Pyramids and iterative refinement (end)
+% subsection Optical flow (end)
 
 % section Alignment (end)
 
