@@ -1,0 +1,123 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 6 - Feature point descriptors RANSAC}
+\author{Gidon Rosalki}
+\date{2025-11-26}
+
+
+\begin{document}
+\maketitle
+
+\section{Feature descriptors}\label{sec:feature_descriptors} % (fold)
+We have discussed how to detect feature points from both images, and how to use these pairs to align images, and we are
+now going to discuss how to build a descriptor from each point. These descriptors will help us match between the points
+that we have detected, and are realistically a description of the area \textit{around} said point. This point descriptor
+should be both \textit{invariant} and \textit{distinctive}.
+
+The simplest descriptor would be a vector of image pixels, where we can find similarity between them through Euclidean
+distance, or cross correlation. We could also measure through local histograms, but realistically these descriptors are
+too imprecise. % TODO not sure this is accurate, around 1004
+\subsection{MOPS - Multi Scale Oriented Patches}\label{sub:mops} % (fold)
+MOPS makes use of multi scale Harris corners, and uses regions taken from a blurred image. It is also (usefully)
+geometrically invariant to rotation and scaling. The descriptor vector uses normalised sampling of a local patch (size
+8x8), and is photometrically invariant to changes in intensity.
+
+The MOPS description vector is attained by taking the orientation of the points found by Harris. The points are inside
+square of 40x40. We then acquire the orientation by taking the gradient of the (blurred) image at that point. We then
+take a patch by going up 2 levels in the pyramid (meaning that we are taking every 5th pixel), and we create a
+descriptor with $x, y, s$ ($s$ is scale) from Harris, and the orientation ($\theta$) from this operation. \\
+The 8x8 oriented patch, is sampled at a lower resolution, and normalised with \[
+    I' = \displaystyle\frac{I - \mu}{\sigma}
+\]
+We use the Euclidean distance as our distance function.
+
+We then measure similarity by the ratio between the first and second Nearest Neighbour. If there is an incorrect
+matching between our point, and the first NN, then there will be a similar value as a result of the distance to the
+second NN, resulting in a fairly high ratio, telling us to not match these points. However, when this value increases,
+it means that there is (probably) a correct matching between this point and the nearest neighbour.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_6_NN_ratio}
+    \caption{Nearest Neighbours ratio}
+\end{figure}
+
+% subsection MOPS (end)
+
+\subsection{SIFT - Scale Invariant Feature Transform}\label{sub:sift} % (fold)
+This makes use of difference of Gaussians local extrema, and the orientation of the histogram of gradient directions.
+The descriptor vector is built from a histogram of local gradient magnitudes, of size $4 \times 4 \times 8 = 128$.
+
+Image content is transformed into local feature coordinates that are invariaent to translation, rotation, scale, and
+other such parameters. To do this, it does not work through Harris point finding, but rather through computing the
+Difference of Gaussian (DOG) pyramid (Burt \& Adelson, 1983). This measures the differences between different scales,
+one octave at a time. Next, it finds matching areas between adjacent scales (up to the distance of 8 pixels), and finds
+matching points within a certain threshold since noise can also produce matches. Yes, this is a messy description, we
+are not expected to understand all its details.
+
+Once we have the features from SIFT, we can create a histogram of local gradient directions, quantised into 36 bins
+(each bin is 10 degrees). We weight each point with the Gaussian window (as in, closer to the middle of the Gaussian
+increases the weight, and closer to the edge reduces it), and the magnitude, and assign a canonical orientation at a
+peak of the smoothed (so each point spreads a little to the nearest bins as well) histogram. Each key specifies stable
+2D coordinates ($x$, $y$, scale, and orientation). \\
+The highest bar in the histogram will then be the direction of our patch. This has been essentially a long and
+complicated method of finding the direction of a point.
+
+To now build the actual SIFT descriptor, we take the gradient magnitude, and orientation, computed over the 16 by 16
+array of locations in scale space around the key point. We rotate these to align with our point, and re-split it into an
+array of 4 by 4 patches (each containing 16 pixels). We take histograms of the directions of each of these 4x4 pixel
+windows, but this time split into 8 bins rather than 36. Additionally, the pixels on the edge of each cell will also
+slightly affect the directions of the neighbouring cell, and we will also smooth slightly between the bins of the
+histogram (as we did previously). So we have 8 bins in each histogram, and 16 histograms, and from this we will connect
+them into a large vector, of $8 \cdot 16 = 128$ dimensions. This vector will then be normalised (its magnitude is now
+1), and if any of the resulting values are greater than 0.2, we will reduce them, and renormalise the vector.  
+
+There are some advantages of invariant local features: \begin{itemize}
+    \item Locality: The features are local, and so are robust to occlusion and clutter 
+    \item Distinctiveness: Individual features can be matched into a large database of objects 
+    \item Efficiency: There is close to real time performance 
+    \item Extensibility: It can be easily extended into a wide range of differing feature types, each adding robustness.
+\end{itemize}
+The locality point builds into 3D object recognition, since we can recognise objects even when occluded.
+
+% subsection SIFT (end)
+% section Feature descriptors (end)
+
+\section{RANSAC}\label{sec:ransac} % (fold)
+
+% section RANSAC (end)
+
+\end{document}
