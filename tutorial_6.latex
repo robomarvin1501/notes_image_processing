@@ -48,9 +48,11 @@ now going to discuss how to build a descriptor from each point. These descriptor
 that we have detected, and are realistically a description of the area \textit{around} said point. This point descriptor
 should be both \textit{invariant} and \textit{distinctive}.
 
-The simplest descriptor would be a vector of image pixels, where we can find similarity between them through Euclidean
-distance, or cross correlation. We could also measure through local histograms, but realistically these descriptors are
-too imprecise. % TODO not sure this is accurate, around 1004
+The simplest descriptor (which we will not use) would be a vector of image pixels, where we can find similarity between
+them through Euclidean distance, or cross correlation. This is not invariant to rotation, or any other modification
+other than translation, which is eminently problematic. We could also measure through local histograms, gradients, and
+so on, but realistically these descriptors are too imprecise, due to not being invariant to sufficient properties. 
+
 \subsection{MOPS - Multi Scale Oriented Patches}\label{sub:mops} % (fold)
 MOPS makes use of multi scale Harris corners, and uses regions taken from a blurred image. It is also (usefully)
 geometrically invariant to rotation and scaling. The descriptor vector uses normalised sampling of a local patch (size
@@ -81,7 +83,7 @@ it means that there is (probably) a correct matching between this point and the 
 This makes use of difference of Gaussians local extrema, and the orientation of the histogram of gradient directions.
 The descriptor vector is built from a histogram of local gradient magnitudes, of size $4 \times 4 \times 8 = 128$.
 
-Image content is transformed into local feature coordinates that are invariaent to translation, rotation, scale, and
+Image content is transformed into local feature coordinates that are invariant to translation, rotation, scale, and
 other such parameters. To do this, it does not work through Harris point finding, but rather through computing the
 Difference of Gaussian (DOG) pyramid (Burt \& Adelson, 1983). This measures the differences between different scales,
 one octave at a time. Next, it finds matching areas between adjacent scales (up to the distance of 8 pixels), and finds
@@ -112,12 +114,129 @@ There are some advantages of invariant local features: \begin{itemize}
     \item Extensibility: It can be easily extended into a wide range of differing feature types, each adding robustness.
 \end{itemize}
 The locality point builds into 3D object recognition, since we can recognise objects even when occluded.
-
 % subsection SIFT (end)
+
+\subsection{Differences}\label{sub:differences} % (fold)
+\begin{table}[H]
+     \centering
+     \begin{tabular}{|p{0.27\textwidth}|p{0.27\textwidth}|p{0.27\textwidth}|}
+         \hline
+          & MOPS & SIFT \\ \hline
+         Feature Point Detection & Scale invariant Harris $\left(x, y, s\right)$ & Difference of Gaussians local extrema
+         $\left(x, y, s\right)$\\ \hline
+         Orientation & Blurred gradient direction $\left(x, y, s, \theta\right)$ & Histogram of weighted gradient
+         directions $\left(x, y, s, \theta\right)$ \\ \hline
+         Patch + scale invariance & $8 \times 8$ pixels from levels $s + 2$ in the pyramid ($\approx 40 \times 40$ on
+         level $s$) & $16 \times 16$ gradient from scale $s$, separated to $4 \times 4$ histograms of 8 orientations \\ \hline
+         Rotation invariance & Path taken at orientation $\theta$ & Orientation $\theta$ subtracted from gradients
+         direction \\ \hline 
+         Intensity invariance & $\text{patch} = \frac{\text{patch} - \text{mean}}{\text{STD}}$ & Normalise to unit
+         vector and clip at 0.2 \\ \hline 
+         Distance metric & $\frac{1 - NN}{2 - NN}$ (Euclidean) & $\frac{1 - NN}{2 - NN}$ (Euclidean)  \\ \hline 
+     \end{tabular}
+     \caption{Comparison table}
+\end{table} 
+% subsection Differences (end)
 % section Feature descriptors (end)
 
 \section{RANSAC}\label{sec:ransac} % (fold)
+Out of the necessary steps: \begin{enumerate}
+    \item Detect feature points in both images
+    \item Build a descriptor from each point
+    \item Find corresponding pairs
+    \item Use these pairs to align images
+\end{enumerate}
+We have achieved 1, 2, and 4. Let us now discuss 3, finding the corresponding pairs. We will assume that given two
+images, we have computed feature points, and their descriptors in both images. For each feature point in each image we
+computed the $k$ good matches in the other image $k = 1, 2, \dots$ (e.g. exhaustive search). We selected candidate
+matching pairs. E.g. two points are a matched pair only if each is in the top $k$ matches of the other point.
 
+We need to figure out how to overcome the wrong matches. To do this, we need robust methods.
+
+\subsection{Robust methods}\label{sub:robust_methods} % (fold)
+The goal of many algorithms is parametric model fitting. Data measured in real images is \textit{inaccurate}, thanks to
+noise, occlusions, ambiguity, or perhaps wrong feature extraction. The goal of \textbf{robust methods} is to tolerate
+outliers. 
+
+A common concept is to use the Least Squared error minimisation. However, despite this working very well for a set of
+clean points, this can be very severely impacted by outliers. Therefore, LSE is \textbf{not} robust. It is good since it
+is a very clear objective function, and easy to optimise, but it is sensitive to outliers, and cannot find multiple
+matches. 
+
+% subsection Robust methods (end)
+
+\subsection{RANdom SAmple Consensus}\label{sub:random_sample_consensus} % (fold)
+In this algorithm, we estimate parameters of a model by random sampling of observed data. The algorithm is as follows:
+\begin{enumerate}
+    \item Sample (randomly) the number of points required to fit the model 
+    \item Solve for model parameters using samples 
+    \item Score the fraction of inliers within a preset threshold of the model 
+    \item Repeat 1 - 3 until the best model is found with high confidence
+\end{enumerate}
+
+So, how many iterations are needed? We want to ensure that if we run for inliers iterations, in probability $p$, we
+choose $s$ inliers in some iterations (for example, $p = 99\%$). We denote inliers by probability $\omega$. Thus, to
+find $n$ \[
+    \left(1 - \omega^s\right)^n \leq 1 - p \implies n \geq \displaystyle\frac{\log \left(1 - p\right)}{\log \left(1 - \omega^s\right)}
+\]
+
+\subsubsection{Parameter selection}\label{sec:parameter_selection} % (fold)
+\begin{itemize}
+    \item $s$: Number of points needed to fit the model 
+    \item $\omega$: The probability of finding an inlier 
+    \item $\omega^s$: Probability that all $s$ points are inliers
+    \item $1 - \omega^2$: Probability that at least one point is an inlier 
+    \item $p$: Probability of choosing $s$ inliers in some iterations 
+    \item $1 - p = \left(1 - \omega^2\right)^n$: Probability to never select $s$ inliers 
+    \item $n$: Number of RANSAC iterations
+\end{itemize}
+So: \[
+    n = \displaystyle\frac{\log \left(1 - p\right)}{\log \left(1- \omega^s\right)}
+\]
+% subsubsection Parameter selection (end)
+
+\subsubsection{No assumption of outlier proportion}\label{sec:no_assumption_of_outlier_proportion} % (fold)
+We may also alter the algorithm, since $\omega$ is often unknown a priori, so we can pick the worst case (e.g. $50\%$),
+and adapt if more inliers are found: % \usepackage{algorithm,algorithmicx,algpseudocode}
+\begin{algorithm}
+    \floatname{algorithm}{}
+    \caption{}\label{alg:}
+    \begin{algorithmic}[1]
+        \State $N = \infty$
+        \State sample\_count $ = 0$
+        \While{n > sample\_count}
+            \State Choose a sample 
+            \State $\omega1 = \displaystyle\frac{\#\text{inliers}}{\#\text{points}}$
+            \If{$\omega1 > \omega$}
+                \State Re-compute $n$ from $\omega$
+            \EndIf
+            \State Increment the sample\_count by 1
+        \EndWhile
+        \State Terminate
+    \end{algorithmic}
+\end{algorithm}
+
+% subsubsection No assumption of outlier proportion (end)
+
+\subsubsection{Conclusions}\label{sec:conclusions} % (fold)
+RANSAC is good due to its robustness to outliers, and is suitable for many model fittin gcases, while being easy to
+implement. However, it is not so good since the computational time grows quickly with the fraction of outliers, and the
+number of parameters.
+
+% subsubsection Conclusions (end)
+
+% subsection RANdom SAmple Consensus (end)
+
+\subsection{Back to Homography Estimation}\label{sub:back_to_homography_estimation} % (fold)
+The RANSAC loop is as follows: \begin{enumerate}
+    \item Randomly select 4 feature pairs 
+    \item Compute homography $H$ exactly
+    \item Compute the inliers where $D \left(p_i', Hp_i\right) < \varepsilon$
+    \item Keep the largest set of inliers 
+    \item Re-compute $H$ using least squares on all inliers in the largest set (can use LSE since we have removed
+        outliers)
+\end{enumerate}
+% subsection Back to Homography Estimation (end)
 % section RANSAC (end)
 
 \end{document}
