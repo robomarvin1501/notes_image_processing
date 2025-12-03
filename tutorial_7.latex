@@ -198,7 +198,7 @@ can find the point of perfect overlap between the blocks.
 \end{figure}
 \subsubsection{Dynamic Programming}\label{sec:dynamic_programming} % (fold)
 We may stitch with dynamic programming (hooray!). We can do this by scanning the image row by row, and computing a
-cumulative minimum swquared difference $E$ for all paths. \begin{align*}
+cumulative minimum squared difference $E$ for all paths. \begin{align*}
     E \left[i, j\right] &=  e \left(i, j\right) + \displaystyle\min_{} \left\{E \left[i - 1, j - 1\right], E \left[i -
     1, j\right], E \left[i - 1, j + 1\right]\right\}  \\ 
             \text{Such that } e &= \left(I_1 - I_2\right)^2
@@ -208,7 +208,39 @@ computed in $O \left(n\right)$ where $n$ is the number of pixels in the overlap 
 % subsubsection Dynamic Programming (end)
 
 \subsubsection{Graph Cut}\label{sec:graph_cut} % (fold)
+Remember flow networks? Well, ready or not, it is time to return to them. Consider a weighted, directed graph, with a
+source, and a sink. We want to find the largest flow, that can be sent from the source, to the sink, along the edges
+(the weights are the capacities). Wee also have the min cut problem, such that the edges are the weights. Here we want
+to find the cheapest cut in the graph, the cut that completely separates the source from the sink, with the lowest
+weight. In 1962, Ford and Fulkerson established that the maximum flow saturates the edges edges along the minimum cut,
+and provided the first polynomial time algorithm for the globally optimum solution.
 
+So how does this relate to us in image processing? Well, we want to find the cut between two images, with the lowest
+cost. If we can define a cost between pairs of pixels, we may say that there is infinite flow between each pixel, and
+the source / sink, and find the minimum cut in the photo. The selected path will then run between pairs of pixels. 
+
+Let the graph nodes be the pixels $p = \left(x, y\right)$. The graph edges are the 4 adjacency relations between each
+pair of adjacent pixels. The edge weights (flow capacities) are defined to be the colour differences between the edge
+pixels in both images: \begin{align*}
+    W \left(p_1, p_2, A, B\right) &= \left|\left|A \left(p_1\right) -= B \left(p_1\right)\right|\right| + \left|\left|A
+    \left(p_2\right) - B \left(p_2\right)\right|\right|
+\end{align*}
+Where $p_1, p_2$ are two adjacent pixel locations, and $A \left(p_1\right)$ and $B \left(p_1\right)$ are the pixel
+colours at location $p_1$ in pictures $A$ and $B$ respectively. The source and target are pixels that we define
+explicitly to be taken from either A or B. The cut location determines the seam between the two images. 
+
+There are two cases for the edge weights: \begin{enumerate}
+    \item The pair of pixels in image B has similar values to the pair in image A. As a result, the weight is very
+        small, and the cut \enquote{prefers} this edge. 
+    \item The pair of pixels in image B has different values from the pair in image A. Thus the weight is large, and the
+        cut \enquote{avoids} this edge. 
+\end{enumerate}
+
+Note that since we are cutting \textit{between} the pixels, we do not need to alpha blend, or pyramid, or anything,
+since we are blending between the pixels. 
+
+To sum this together, the simple seam location and blending is less suitable when there is a misalignment, or moving
+objects. In contrast, the optimal seam search is less suitable when there are differences in global intensity.
 % subsubsection Graph Cut (end)
 % subsection Optimal Seam (end)
 % section Blending and Stitching (end)
