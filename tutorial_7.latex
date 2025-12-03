@@ -1,0 +1,216 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 7}
+\author{Gidon Rosalki}
+\date{2025-12-03}
+
+
+\begin{document}
+\maketitle
+Today we are going to use both dynamic programming, and network flows, as studied in algorithms. If you have not yet
+studied that (or have forgotten), then simply accept it as working, and feel free to cry yourself to sleep.
+
+\section{Applying a 2D Homography to Lines}\label{sec:applying_a_d_homography_to_lines} % (fold)
+Let us begin by considering a line. A line is every $\left(x, y\right)$ that satisfies \[
+    ax + by + c = 0
+\]
+As we represent 2D points in homogeneous coordinates: \[
+    x = \begin{pmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{pmatrix}
+\]
+So too we will represent lines as \begin{align*}
+    l = \begin{pmatrix}
+        a \\
+        b \\
+        c \\
+    \end{pmatrix}
+\end{align*}
+
+The point $x$ is on line $l$ if: \begin{align*}
+    l &\Leftrightarrow l^T x = 0 \\ 
+    \text{since } l^Tx = \left(a\ b\ c\right) \begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} &= ax + by +c = 0
+\end{align*}
+
+Furthermore \[ 
+    l = p_1 \times p_2
+\]
+Where $l$ goes through the points $p_1, p_2$. This is due too \begin{align*}
+    l^T p_1 &= 0 \\ 
+    l^T p_2 &= 0
+\end{align*}
+
+While homography on points is as follows: \[
+    x' = H x
+\]
+Homography on lines is \[
+    l' = H^{-T} l
+\]
+This is the case since if $l^T x_1 = l^T x_2 = 0$, and $x' = Hx$, then the image line $l'$ must satisfy the following:
+\begin{gather}
+    l'^T x_1' = 0 \implies l'^{T} H x_1 = 0 \implies \left(H^T l'\right)^T x_1 = 0 \\
+    l'^T x_2' = 0 \implies l'^{T} H x_2 = 0 \implies \left(H^T l'\right)^T x_2 = 0 \\
+    \implies H^T l' = l \implies l' = H ^ {-T} l
+\end{gather}
+
+% section Applying a 2D Homography to Lines (end)
+
+\pagebreak
+\section{Blending and Stitching}\label{sec:blending_and_stitching} % (fold)
+In the previous tutorial, we successfully merged images for creating panoramas, but wound up with a seam: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_seam}
+    \caption{Seam}
+\end{figure}
+We (obviously) do not want that seam to be there.
+
+To build a panorama, we need to \begin{enumerate}
+    \item Find alignment between overlapping images \begin{itemize}
+            \item Choose motion transformation between images
+            \item (This is the translation, rotation, affine, homography)
+        \end{itemize}
+    \item Choose a compositing surface for warping
+    \item Warp 
+    \item Seamlessly blend the edges
+\end{enumerate}
+
+There are some further problems with creating these mosaics. Consider a non-static scene. If someone moves across the
+seams while they are being photographed, and so will appear in numerous parts of the image (and sometimes, only parts of
+himself): 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_nonstatic}
+    \caption{}
+\end{figure}
+
+Stitching the images together can be a challenge for many reasons: \begin{itemize}
+    \item Exposure differences 
+    \item Vignetting 
+    \item Blurring (due to misregistration)
+    \item Ghosting (moving objects)
+\end{itemize} 
+Our goal is thus to have invisible seams between the images in the panorama. This means that there should be a minimal
+amount of seam artefacts, avoiding the creation of edges that did not appear in the original image. 
+
+\subsection{Seam location - Naive}\label{sub:seam_location_naive} % (fold)
+In order to reduce problems with the edges, we take the middle strip of the image, and align based off that, and insert
+that into the image. This reduces the problems from vignetting on the sides of the photo. This is discussed further in
+Lecture 7. 
+% subsection Seam location - Naive (end)
+
+\subsection{Blend the transition - Feathering (alpha blending) and Pyramid blending}\label{sub:blend_the_transition_feathering_alpha_blending_and_pyramid_blending} % (fold)
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_bad_blend}
+    \caption{}
+\end{figure}
+This is a cut between to images, which we can see, does not convincingly merge together to the two images. We may
+instead mask them together, and blend them together much more smoothly with a linear transformation in the alpha
+(transparency) channel. \begin{gather}
+    I_{left} \left(x, y\right) = \left(\alpha R, \alpha G, \alpha B\right)
+    I_{left} \left(x, y\right) = \left((1 - \alpha) R, (1 - \alpha) G, (1 - \alpha) B\right)
+    I_{blend} = I_{left} + I_{right}
+\end{gather}
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_alpha_blend}
+    \caption{}
+\end{figure}
+A larger window size will result in ghosting across the seam (not shown here), where a smaller window size will result
+in a sharp line, so this is naturally, imperfect. We may instead do pyramid blending, like we did in exercise 3, which
+results in much better transitions. 
+
+There is also Fourier Domain blending, where we instead take the FT of the two images, and apply the mask such that for
+one we only take the low frequencies (the middle), and the other we take the high frequencies, merge them together, and
+take the inverse Fourier to recreate the image. 
+% subsection Blend the transition - Feathering (alpha blending) and Pyramid blending (end)
+
+\subsection{Optimal Seam}\label{sub:optimal_seam} % (fold)
+What if instead we take a strip from each image, but instead of predetermining a mask, we take the optimal mask at each
+point? Well, let the algo begin! In order to stitch moving objects, we do \textbf{not} want to blend, but rather to
+\textit{cut}. Moving images become ghosts, which looks bad. Instead of blending between the images, we may instead find
+the optimal seam. Considering the difference between the two images, we may take the point where there is the greatest
+agreement between the two images, and place the cut there, such that there should be the least difference. \\
+Davis in 1998 suggested segmenting the mosaic, such that there is a single source image per segment, and we avoid
+artefacts along the boundaries. 
+
+Another application is in texture synthesis. We take a set of blocks, and place them randomly on top of each other to
+create a texture (like say, the ground). This will appear bad. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_random_placement}
+    \caption{Random placement}
+\end{figure}
+We may instead restrict our neighbouring blocks to those that have the best overlap. This will still be imperfect, since
+just because there is good overlap, does not mean that there is a good alignment: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_overlap}
+    \caption{Constrained by overlap}
+\end{figure}
+A good solution is to find the minimal error, by cutting along the boundary. This will minimise the changes, since we
+can find the point of perfect overlap between the blocks. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_7_boundary_cut}
+    \caption{Boundary cut}
+\end{figure}
+\subsubsection{Dynamic Programming}\label{sec:dynamic_programming} % (fold)
+We may stitch with dynamic programming (hooray!). We can do this by scanning the image row by row, and computing a
+cumulative minimum swquared difference $E$ for all paths. \begin{align*}
+    E \left[i, j\right] &=  e \left(i, j\right) + \displaystyle\min_{} \left\{E \left[i - 1, j - 1\right], E \left[i -
+    1, j\right], E \left[i - 1, j + 1\right]\right\}  \\ 
+            \text{Such that } e &= \left(I_1 - I_2\right)^2
+\end{align*}
+The optimal path can be obtained by tracing back with a minimal cost from bottom to top. Dynamic programming can be
+computed in $O \left(n\right)$ where $n$ is the number of pixels in the overlap area. 
+% subsubsection Dynamic Programming (end)
+
+\subsubsection{Graph Cut}\label{sec:graph_cut} % (fold)
+
+% subsubsection Graph Cut (end)
+% subsection Optimal Seam (end)
+% section Blending and Stitching (end)
+
+\end{document}
