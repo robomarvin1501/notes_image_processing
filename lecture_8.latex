@@ -1,0 +1,138 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 8 - Compression}
+\author{Gidon Rosalki}
+\date{2025-12-07}
+
+
+\begin{document}
+\maketitle
+
+\section{Introduction}\label{sec:introduction} % (fold)
+The purpose of compression is to reduce the number of bits needed to represent an image. Consider, a still image of $1K
+\times 1K$, each pixel comprised of 24 bits, and we will need 3MB for each image. Therefore, 1 second of HD video, at 25
+frames per second will need 75MB per second, and so an hour would need 270GB. We know that it is possible to compress
+this, because today an hour of HD video only needs around 1GB of storage space. \\
+There is possibility of spatial correlation, pixels that are close in space are similar, so less information can be
+stored. Additionally there is temporal correlation in videos, frames that are close to each other in time are often
+similar.
+
+There are two main types of compression, lossless and lossy. In lossless, there is no information loss, and the image
+may be reconstructed exactly as the original. This is often applied in medical imaging, archiving, and may be applied to
+any file, such as text. An image example is png files. \\
+However, lossy compression allows small changes from the original. This may be applied to all photography, and is
+designed specifically for images and video.
+% section Introduction (end)
+
+\section{Huffman encoding}\label{sec:huffman_encoding} % (fold)
+Huffman is a form of lossless compression. In the first pass, it measures the distribution of the values, and in teh
+second pass uses a variable length code where rare values get longer codes, and popular values get shorter codes. This
+reduces the total number of bits required to represent an image, and is effective when different values have different
+probabilities. It can be used to encode all of English with approximately 1 bit per letter.
+
+So, how do we perform this? It involves a path in a tree. Let us assume that our pixels have colours $a_1, a_2, \dots,
+a_n$ with probabilities $p_1, \dots, p_n$. We then build a tree by iteratively joining two nodes with the lowest
+probabilities. The colours of the pixels are now the leaves in the tree, and the Huffman code is an encoding of the path
+from the root of hte tree to each leaf. Colours that appear frequently get a short code, and rarer values get longer
+codes.
+
+Consider the following table: \begin{table}[H]
+     \centering
+     \begin{tabular}{|c|c|c|c|c|}
+         \hline
+         Pixel value & 1 & 2 & 3 & 4 \\ \hline
+         Probability & 0.1 & 0.05 & 0.05 & 0.8 \\ \hline
+         Huffman code & 11 & 101 & 100 & 0 \\ \hline
+         Code length & 2 & 3 & 3 & 1 \\ \hline
+     \end{tabular}
+     \caption{Huffman table}
+\end{table} 
+So here, if we encode 1,000 pixels with this distribution, a fixed length code would need 2 bits to encode 4 values,
+resulting in a total of 2,000 bits. However, with Huffman, we would only need \[
+    800 \cdot 1 + 100 \cdot 2 + 100 \cdot 3 = 1300
+\]
+A significant reduction. If all the colours have equal probabilities, then we will produce a uniform length code, and
+there will be no compression. A question from an exam, how can one compress a binary image using Huffman? One cannot,
+since one still needs at least two bits. By definition, Huffman codes cannot help binary images.
+% section Huffman encoding (end)
+
+\section{Entropy}\label{sec:entropy} % (fold)
+\subsection{Shannon encoding}\label{sub:shannon_encoding} % (fold)
+Given a probability distribution $p \left(\cdot\right)$ over events $0 \leq k \leq n$, how much new information is
+received when we are told that event $k$ occurred? Common events carry very little information, but rare events, much
+more. Shannon encoded information as $- \log_2 p \left(k\right)$. So a high value of $p \left(k\right)$ is very little
+information, but a low $p \left(k\right)$ implies a lot of information. Since each $k$ comes with the probability $p
+\left(k\right)$, the average new information for the distribution is given as \[
+    \text{Entropy } = H \left(X\right) = \displaystyle\sum_{k = 0}^{n - 1} p \left(k\right) \log p \left(k\right)
+\]
+Entropy gives the information per pixel for a distribution. The distribution with the highest certainty would be $p
+\left(k\right) = 0$ except for $p \left(0\right)= 1$. This has the entropy of 0, so absolute certainty. The distribution
+with the maximum uncertainty is the uniform distribution, with $p \left(k\right) = \displaystyle\frac{1}{n}$, and the
+entropy of $\log \left(n\right)$. \\ 
+To draw an analogy to physics, systems with lower temperatures have lower entropy, and systems with higher temperatures
+have higher entropy. 
+% subsection Shannon encoding (end)
+
+\subsection{Predictive encoding}\label{sub:predictive_encoding} % (fold)
+This predicts a pixel value, and then transmits the \textit{difference} from the prediction. For example, a linear
+predictor from earlier raster pixels: \begin{gather}
+    \begin{bmatrix}
+        y_2 & y_3 \\
+        y_1 & x
+    \end{bmatrix}
+    x = \displaystyle\frac{y_1 + y_3}{2}
+\end{gather}
+The original picture may then be recovered from the predicted differences. The histogram of differences has much lower
+entropy than the original histogram, and so we can get a much better Huffman encoding of it than of the original image.
+% subsection Predictive encoding (end)
+% section Entropy (end)
+
+\section{Lossless compression}\label{sec:lossless_compression} % (fold)
+to perform lossless compression we: \begin{enumerate}
+    \item create a predictive encoding to reduce entropy
+    \item Select and perform a favoured lossless encoding: \begin{enumerate}
+        \item Huffman coding 
+        \item Lempel Ziv
+    \end{enumerate}
+\item Paxk the results in a dedicated format with the checksum, and so on
+\end{enumerate}
+
+% section Lossless compression (end)
+
+
+
+\end{document}
