@@ -125,13 +125,103 @@ entropy than the original histogram, and so we can get a much better Huffman enc
 to perform lossless compression we: \begin{enumerate}
     \item create a predictive encoding to reduce entropy
     \item Select and perform a favoured lossless encoding: \begin{enumerate}
-        \item Huffman coding 
-        \item Lempel Ziv
-    \end{enumerate}
-\item Paxk the results in a dedicated format with the checksum, and so on
+            \item Huffman coding 
+            \item Lempel Ziv
+        \end{enumerate}
+    \item Pack the results in a dedicated format with the checksum, and so on
 \end{enumerate}
 
+Let us consider the following two images: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_8_matches}
+    \caption{}
+\end{figure}
+Despite the fact that the left image has a high entropy, and the right a low, they have a very similar histogram, and so
+Huffman will give very similar encodings for the two of them. We can do better by using Lempel-Ziv compression (LZW).
+
+\subsection{LZW}\label{sec:lzw} % (fold)
+This is particularly powerful with repetitive patterns. It is a one pass, online algorithm, that builds an on the fly
+dictionary of strings. The index of entries in the dictionary are transmitted (here the pixel value of 0 to 255 is
+treated s a character). The same dictionary is built at the receiving side. However, be warned, there are several
+different variants. Let us consider the following example algorithm: % \usepackage{algorithm,algorithmicx,algpseudocode}
+\begin{algorithm}[H]
+    \floatname{algorithm}{LZW}
+    \algrenewcommand\algorithmicrequire{\textbf{Input: }}
+    \algrenewcommand\algorithmicensure{\textbf{Output: }}
+    \caption{}\label{alg:}
+    \begin{algorithmic}[1]
+        \Require $input$
+        \Ensure $output$
+        \State Initialise a dictionary with all single characters (0..255)
+        \State P = first input character 
+        \While{Not at end of input strem}
+            \State C = next input character
+            \If{PC is in dictionary}
+                \State P = PC
+            \Else
+                \State output the code for P 
+                \State Add PC to the dictionary 
+                \State P = C
+            \EndIf
+        \EndWhile
+        \State \textbf{return} Output index for P
+    \end{algorithmic}
+\end{algorithm}
+The important thing to note here is that LZW is very good at repetitive patterns, since they will be encoded once, and
+referenced many times. 
+% subsection LZW (end)
+
+\subsection{Run Length Encoding - RLE}\label{sub:run_length_encoding_rle} % (fold)
+This is mainly used in binary images. It encodes pairs, indicating the colour, and the length of that colour, for
+example: \[
+    \left(1, 63\right), \left(0, 87\right), \left(1, 37\right), \dots
+\]
+This works very well on large uniform regions like text. We can even remove the colour bit, since we know that it
+changes every time there is a new input. We will note that this is not always an effective method for compression,
+sometimes it may in fact increase the amount of data, depending on the input. We will also note that repeated
+compression \textbf{does not help}, and will often \textbf{increase} the amount of data required.
+% subsection Run Length Encoding - RLE (end)
 % section Lossless compression (end)
+
+\section{Lossy compression}\label{sec:lossy_compression} % (fold)
+Here, we take the image, transform it, quantise it, encode, and then store / transmit it. To decompress we simply
+decode, and run the inverse transform. The quantisation is the lossy part, and is the main source for compression but
+also for errors. Errors are not easy to measure. We can use things like MLE, but it is imperfect. Consider the following
+simple example: \begin{enumerate}
+    \item Image Transform: Convolve with (1, -1)
+    \item Quantization: None
+    \item Coding: Huffman Coding
+    \item Lossless coding
+    \item Improved compression: after convolution with (1, -1) the colour distribution will be concentrated around zero.
+\end{enumerate}
+
+\subsection{JPEG}\label{sub:jpeg} % (fold)
+For JPEG, we split an image into non overlapping $n \times n$ blocks, and perform a transform on those blocks to give $n
+\times n$ transform values. We then quantise, and encode these values. JPEG uses $8 \times 8$ blocks, with the Discrete
+Cosine Transform (DCT), uniform quantisation, and Huffman encoding.
+
+For the 64 ($8 \times 8$) DCT basis function, each 8 by 8 image block is represented as a weighted sum of the basis
+functions. The 2D DCT transform finds those weights, and low weights (of high frequencies) are zeroed. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_8_dct_basis}
+    \caption{DCT Basis}
+\end{figure}
+We use the DCT, in place of the DFT since DCT is better for compression than the DFT. Reflection in place of duplication
+at the edges reduces the high frequencies, and the DCT has real coefficients, in place of the DFT's complex
+coefficients.
+
+\subsubsection{Colours}\label{sec:colours} % (fold)
+For colours in JPEG we transform from RGB to $Y'C_BC_R$. Here, Y' is the intensity, a weighted sum of R, G, and B. $C_B,
+C_R$ are chromaticity values by colour differences, so \begin{gather}
+    C_B = B - \left(R + G\right) \\
+    C_R = R - \left(B + G\right) \\
+\end{gather}
+% subsubsection Colours (end)
+
+% subsection JPEG (end)
+% section Lossy compression (end)
 
 
 
