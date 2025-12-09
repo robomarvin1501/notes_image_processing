@@ -74,7 +74,7 @@ circle. There are no points, and many repeating sections.
 \subsubsection{Direct methods}\label{sec:direct_methods} % (fold)
 We are assuming constant brightness, and no rolling shutter. \\ 
 
-Given images $I_1, I_2$, we can find teh translation $\left(u, v\right)$, that will minimise the SSD (Sum of Squared
+Given images $I_1, I_2$, we can find the translation $\left(u, v\right)$, that will minimise the SSD (Sum of Squared
 Differences): \[
     E \left(u, v\right) = \displaystyle\sum_{x}^{} \displaystyle\sum_{y}^{} \left(I_1 \left(x, y\right) - I_2 \left(x +
     u, y + v\right)\right)^2
