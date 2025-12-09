@@ -210,7 +210,7 @@ computed in $O \left(n\right)$ where $n$ is the number of pixels in the overlap 
 \subsubsection{Graph Cut}\label{sec:graph_cut} % (fold)
 Remember flow networks? Well, ready or not, it is time to return to them. Consider a weighted, directed graph, with a
 source, and a sink. We want to find the largest flow, that can be sent from the source, to the sink, along the edges
-(the weights are the capacities). Wee also have the min cut problem, such that the edges are the weights. Here we want
+(the weights are the capacities). We also have the min cut problem, such that the edges are the weights. Here we want
 to find the cheapest cut in the graph, the cut that completely separates the source from the sink, with the lowest
 weight. In 1962, Ford and Fulkerson established that the maximum flow saturates the edges edges along the minimum cut,
 and provided the first polynomial time algorithm for the globally optimum solution.
@@ -222,7 +222,7 @@ the source / sink, and find the minimum cut in the photo. The selected path will
 Let the graph nodes be the pixels $p = \left(x, y\right)$. The graph edges are the 4 adjacency relations between each
 pair of adjacent pixels. The edge weights (flow capacities) are defined to be the colour differences between the edge
 pixels in both images: \begin{align*}
-    W \left(p_1, p_2, A, B\right) &= \left|\left|A \left(p_1\right) -= B \left(p_1\right)\right|\right| + \left|\left|A
+    W \left(p_1, p_2, A, B\right) &= \left|\left|A \left(p_1\right) - B \left(p_1\right)\right|\right| + \left|\left|A
     \left(p_2\right) - B \left(p_2\right)\right|\right|
 \end{align*}
 Where $p_1, p_2$ are two adjacent pixel locations, and $A \left(p_1\right)$ and $B \left(p_1\right)$ are the pixel
