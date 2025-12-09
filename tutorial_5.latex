@@ -76,7 +76,7 @@ Where $T$ is global, meaning that it has the same form for every point $p$, and 
 A \textit{translation} of a coordinate would mean adding a scalar to each of its components. \textit{Scaling} it would
 mean multiplying each of its components by a scalar, where it is \textit{uniform} when it is the same for all
 components (dimensions). \textit{Non uniform scaling} means we scale different amounts in different components
-(dimensions). The sscaling operation \begin{gather*}
+(dimensions). The scaling operation \begin{gather*}
     x' = ax \\ 
     y' =  by
 \end{gather*}
@@ -100,8 +100,8 @@ To perform a rotation by $\theta$ we perform \begin{gather}
 If we instead define \begin{align*}
     x &= r \cos \left(\phi\right) \\
     y &= r \sin \left(\phi\right) \\ 
-    \implies x' = r \cos \left(\phi + \theta\right) \\
-    \implies y' = r \sin \left(\phi + \theta\right) \\
+    \implies x' &= r \cos \left(\phi + \theta\right) \\
+    \implies y' &= r \sin \left(\phi + \theta\right) \\
 \end{align*}
 This is easy to capture in matrix form: \begin{gather}
     \begin{bmatrix}
