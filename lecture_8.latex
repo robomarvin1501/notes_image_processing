@@ -59,7 +59,7 @@ designed specifically for images and video.
 % section Introduction (end)
 
 \section{Huffman encoding}\label{sec:huffman_encoding} % (fold)
-Huffman is a form of lossless compression. In the first pass, it measures the distribution of the values, and in teh
+Huffman is a form of lossless compression. In the first pass, it measures the distribution of the values, and in the
 second pass uses a variable length code where rare values get longer codes, and popular values get shorter codes. This
 reduces the total number of bits required to represent an image, and is effective when different values have different
 probabilities. It can be used to encode all of English with approximately 1 bit per letter.
@@ -113,7 +113,7 @@ predictor from earlier raster pixels: \begin{gather}
     \begin{bmatrix}
         y_2 & y_3 \\
         y_1 & x
-    \end{bmatrix}
+    \end{bmatrix} \\
     x = \displaystyle\frac{y_1 + y_3}{2}
 \end{gather}
 The original picture may then be recovered from the predicted differences. The histogram of differences has much lower
@@ -122,7 +122,7 @@ entropy than the original histogram, and so we can get a much better Huffman enc
 % section Entropy (end)
 
 \section{Lossless compression}\label{sec:lossless_compression} % (fold)
-to perform lossless compression we: \begin{enumerate}
+To perform lossless compression we: \begin{enumerate}
     \item create a predictive encoding to reduce entropy
     \item Select and perform a favoured lossless encoding: \begin{enumerate}
             \item Huffman coding 
@@ -155,7 +155,7 @@ different variants. Let us consider the following example algorithm: % \usepacka
         \Ensure $output$
         \State Initialise a dictionary with all single characters (0..255)
         \State P = first input character 
-        \While{Not at end of input strem}
+        \While{Not at end of input stream}
             \State C = next input character
             \If{PC is in dictionary}
                 \State P = PC
