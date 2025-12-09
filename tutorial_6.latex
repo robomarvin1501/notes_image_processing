@@ -219,7 +219,7 @@ and adapt if more inliers are found: % \usepackage{algorithm,algorithmicx,algpse
 % subsubsection No assumption of outlier proportion (end)
 
 \subsubsection{Conclusions}\label{sec:conclusions} % (fold)
-RANSAC is good due to its robustness to outliers, and is suitable for many model fittin gcases, while being easy to
+RANSAC is good due to its robustness to outliers, and is suitable for many model fitting cases, while being easy to
 implement. However, it is not so good since the computational time grows quickly with the fraction of outliers, and the
 number of parameters.
 
