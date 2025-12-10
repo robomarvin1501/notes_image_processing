@@ -109,6 +109,7 @@ but could just be the size of the image), and we can quantise them to $\N$.
 
 % subsection A better representation (end)
 
+\pagebreak
 \subsection{Smoothing}\label{sub:smoothing} % (fold)
 Without smoothing then a point will refer to a line, but when we smooth, then the point is expanded in size, and thus
 the line is expanded into a valley: 
@@ -125,8 +126,11 @@ So now we want to find the two dominant lines in the image. The problem is that 
 with the maximal value, then $\left(r + \varepsilon, \theta + \varepsilon\right)$ will also get high scores. To resolve
 this we only search for local maxima. 
 
-We can also add in the local gradient, and then a line in the image will point to a cluster of points in the Hough
-transform, rather than a single point. % TODO go over this, aroudn 1035-1040
+We can also add in the local gradient. If a line is the transition between 2 colours, then taking a point on this line
+has the gradient that is \textit{perpendicular} to the line of the transition. Therefore, when adding in the local
+gradient, a point on the line will also point to a point in the Hough transform. Taking all the points of this line
+will, thanks to noise, point to a very tight cluster of points in the Hough transform. This reduces the problem of
+infinite lines, since we know from the tight cluster which (approximate) line we want. 
 % subsection Making a decision (end)
 
 \subsection{Complex shapes}\label{sub:complex_shapes} % (fold)
@@ -164,7 +168,220 @@ only the quarters.
 % subsection Complex shapes (end)
 
 \section{Colour}\label{sec:colour} % (fold)
+Systems need colour. An incomplete list of reasons why includes \begin{itemize}
+    \item To tell what food is edible
+    \item To distinguish between material changes from shading changes 
+    \item To group parts of one object together in a scene 
+    \item Check whether a person's appearance is normal / healthy 
+    \item And so on
+\end{itemize}
 
+Newton did some experiments with prisms, where he decomposed sunlight into individual components (remarkably rainbow
+like), and also where he used a second prism to recombine them into a single beam of white. The visible electromagnetic
+spectrum goes from around 390nm (violet) to 770nm (red). 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_colour_wavelengths}
+    \caption{EM spectrum}
+\end{figure}
+
+Humans have 2 types of cells in our eyes for seeing. We have rods, and cones. The \textbf{rods} are intensity receptors,
+that are very insensitive, and can only see in black and white. Great for night vision, and there are around 125 million
+of them, primarily focused in ones peripheral vision. There are also \textbf{cones}, which can receive colour. There are
+3 types, one for each of red, green, and blue, and they are densely packed in the retina. 
+
+The 3 different types of cones have different \textbf{spectral response curves}. Blue is \textbf{small} wavelengths,
+green is \textbf{medium} wavelengths, and red is \textbf{large} wavelengths. We will note that there is a lot of overlap
+between red and green response curves, which can result in R/G colour blindness.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.1]{tutorial_8_spectral_response}
+    \caption{Spectral response curves}
+\end{figure}
+
+Colour matching experiments show that for a typical person no more than three spectra are required to reproduce all
+perceived colours. For example, RGB. Each colour may be given as \[
+    T = \displaystyle\sum_{i = 1}^{3}w_i P_i
+\]
+So for example, \begin{gather}
+    P_1 = 645nm\ (R)
+    P_2 = 526nm\ (G)
+    P_3 = 444nm\ (B)
+\end{gather}
+
+Grassman laid down some laws, for the linearity of colour matching: \begin{enumerate}
+    \item Colour matching is additive: \[
+            C_1 + C_2 = \left(R_1 + R_2\right) + \left(G_1 + G_2\right) + \left(B_1 + B_2\right)
+        \]
+    \item Scaling the colour and the primaries b the same factor preserves the match: \[
+            aC = aR + aG + aB
+        \]
+\end{enumerate}
+These statements are true as any biological law. They mean that people behave like \textbf{linear} systems in the colour
+matching experiment.
+
+We cannot quite represent \textbf{all} the colours in the world with just RGB, but we can represent enough of them that
+most people cannot notice the difference. Some professional printers thus have more colours from which to choose,
+sometimes even up to 9, rather than the standard 4 in a home printer, to help them have more precise colour matching.
+
+We can say in general that \[
+    C = \begin{pmatrix}
+        c_1 \left(\lambda_1\right) & \dots & C_1 \left(\lambda_N\right) \\
+        c_2 \left(\lambda_1\right) & \dots & C_2 \left(\lambda_N\right) \\
+        c_3 \left(\lambda_1\right) & \dots & C_3 \left(\lambda_N\right) \\
+    \end{pmatrix}
+\]
+Why do we have so many wavelengths for each colour? This is because we do not see only one wavelength per major colour,
+but rather a range, so this represents that neatly. \\
+Let the spectral signal be described by the vector \[
+    t = \begin{pmatrix}
+        t \left(\lambda_1\right) \\
+        \vdots \\
+        t \left(\lambda_N\right) \\
+    \end{pmatrix}
+\]
+Then the amounts of each primary colour needed to match $t$ are $Ct$. \\ 
+Two spectra $t$, and $s$ will perceptually match if $Ct = Cs$, where $C$ is the colour matching functions in a set of
+primaries. This is \textbf{colour metamerism}. Here, despite seeing possibly very different spectra of colours, we will
+\textit{perceive} the same colour of light. Metameric lights are lights with different spectral power distributions, but
+appear identical to most observers. Consider for example the light of a tungsten bulb, and the light of a phosphor CRT
+television. The light origin is completely different, and the spectra are incredibly different, but to most people, the
+colour of emitted light will be very similar. 
+
+\subsection{Colour spaces}\label{sub:colour_spaces} % (fold)
+For only mixing coefficients, the CIE (Commission Internationale d'Eclairage) defined 3 new \textbf{hypothetical} light
+sources $X, Y$, and $Z$ to replace red, green, and blue: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_xyz_colours}
+    \caption{CIE-XYZ colour space}
+\end{figure}
+We can translate between this and RGB through multiplying by a matrix: \begin{gather}
+    \begin{pmatrix}
+        R \\
+        G \\
+        B \\
+    \end{pmatrix} = \begin{bmatrix}
+        3.240479 & -1.537150 & -0.498535 \\
+        -0.969256 & 1.875992 & 0.041556 \\
+        0.055648 & -0.204043 & 1.057311
+    \end{bmatrix} \begin{pmatrix}
+        X \\
+        Y \\
+        Z \\
+    \end{pmatrix} \\ 
+    \begin{pmatrix}
+        X \\
+        Y \\
+        Z \\
+    \end{pmatrix} = \begin{bmatrix}
+        0.412453 & 0.357580 & 0.180423 \\
+        0.212671 & 0.715160 & 0.072169 \\
+        0.019334 & 0.119193 & 0.950227
+    \end{bmatrix}
+\end{gather}
+
+Not all XYZ colours have positive RGB values, but \textit{all} positive RGB values have positive XYZ values. It is often
+convenient to work in 2D colours space, so the 3D colour space is projected onto the $x + y + z = 1$ plane, to yield the
+chromaticity diagram. This diagram is presenting the three imaginary colours, X, Y, Z. All the weights are positive, and
+it represents all the visible colours (tha gamut of human vision). Colours are additive, and the weights of X, Y, Z form
+the 3D CIE-XYZ space. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_cie_chromaticity}
+    \caption{CIE chromaticity diagram}
+\end{figure}
+In this diagram, C is \enquote{white}, and A and V can be mixed to produce any colour along the line AB., including
+white. The same holds for EF, but without white, and for IJK, which does include white.  \\
+We can draw the MacAdam ellipses on this diagram (not shown here), where the idea is that within these ellipses, humans
+cannot distinguish between the colours. 
+
+\subsubsection{YIQ and YUV colour models}\label{sec:yiq_and_yuv_colour_models} % (fold)
+This is a recoding of RGV for transmission efficiency, and compatibility with greyscale televisions. Recall from the
+first lecture \[
+    \begin{bmatrix}
+        Y \\
+        I \\
+        Q 
+    \end{bmatrix} = \begin{bmatrix}
+        0.299 & 0.587 & 0.114 \\
+        0.596 & -0.275 & -0.321 \\
+        0.212 & -0.523 & 0.311
+    \end{bmatrix} \begin{bmatrix}
+        R \\
+        G \\
+        B
+    \end{bmatrix}
+\]
+% subsubsection YIQ and YUV colour models (end)
+
+We can also consider RGB on a cube. RGB is additive, meaning we add different amounts of the 3 primaries to get every
+colour, so should we represent this on a cube, then the greyscale colours will appear on the diagonal between the black
+corner, and the white colour. We can thus flatten this cube onto a hexagon.
+
+\subsubsection{HSV colour space}\label{sec:hsv} % (fold)
+Here we have 3 values, the \textit{Hue}, which is the colour of the pure pigment, the \textit{Saturation}, which is a
+measure of colourfulness, or the distance from the grey line, and value, which is a measure of brightness. Maximum
+saturation is at $V = 1$, and at $V = 0$, then the hue is undefined. 
+% subsubsection HSV (end)
+
+\subsubsection{CMYK - subtractive colour model}\label{sec:cmyk_subtractive_colour_model} % (fold)
+A computer monitor additively mixes red, green, and blue to create colour, where white is the maximum of all 3
+primaries. A CMYK printer instead uses light absorbing cyan, magenta, and yellow inks, and white is the colour of the
+background. This is useful, since paper is not emissive.
+% subsubsection CMYK - subtractive colour model (end)
+
+There are \textbf{lots} of colour spaces. \begin{itemize}
+    \item CIE - XYZ: Linear 
+    \item CIE - $L * a * b$: Non linear
+    \item CIE - RGB: Linear 
+    \item HSV and HSL: Nonlinear
+    \item CMY: Linear
+    \item CMYK: Nonlinear 
+    \item YUV, YIQ: Linear 
+    \item And more...
+\end{itemize}
+
+% subsection Colour spaces (end)
+
+\subsection{Colour histograms}\label{sub:colour_histograms} % (fold)
+These are usually density functions $\R^3 \to \R$. The value of the bin is the number of image pixels that have the RGB
+values equal to $\left[r_i, g_i, b_i\right]$. Assuming an 8 bit depth RGB image, the RGB histogram has $256 ^ {3} =
+16,777,216$ bins, which means it is usually very sparse. A natural image property that contributes to the spareseness of
+colour histograms is the \textit{piecewise smooth world property}. 
+
+Suppose we want to find images that are similar to a query image. Comparing pixel values is extremely sensitive to
+changes in the image. Comparing colour histograms is much more robust, since we are only comparing the colour palette. 
+
+There exist some different ways of calculating the distance between two histograms: \begin{itemize}
+    \item Euclidean distance: \[
+            d^2 \left(h, g\right) = \displaystyle\sum_{A}^{}\displaystyle\sum_{B}^{}\displaystyle\sum_{C}^{}\left(h
+            \left(a, b, c\right) - g \left(a, b, c\right)\right) ^ {2} 
+        \]
+    \item Intersection score \[
+            s \left(h, g\right) = \displaystyle\sum_{A}^{}\displaystyle\sum_{B}^{} \displaystyle\sum_{C}^{} \min \left(h
+            \left(a, b, c\right), g \left(a, b, c\right)\right)
+        \]
+    \item EMD - \enquote{Earth Mover's Distance} 
+\end{itemize}
+
+In the RGB space, an object with a uniform colour, and varying light reflectance forms a 3D line through the origin.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_col_hist_col_lines}
+    \caption{Colour lines in colour histograms}
+\end{figure}
+In bright image regions, the pixel values may be clipped to a maximum value. This causes a loss of details, and colour
+distortion. The idea is to use the unclipped values of the line to recover clipped ones. Practically: identify a
+saturation (or breaking) point, fit a 3D line to the unclipped part, and predict the clipped pixel values.
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_correct_clipped}
+    \caption{Correction of a clipped colour image of a car}
+\end{figure}
+
+% subsection Colour histograms (end)
 % section Colour (end)
 
 \end{document}
