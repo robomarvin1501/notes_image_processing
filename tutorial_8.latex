@@ -1,0 +1,170 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 8 - Hough Transform and Colour}
+\author{Gidon Rosalki}
+\date{2025-12-10}
+
+
+\begin{document}
+\maketitle
+
+\section{Hough Transform}\label{sec:hough_transform} % (fold)
+The Hough Transform is a method of finding parametric shapes in an image. Parametric shapes are things like straight
+lines, rectangles, circles, and so on. More generally, it is a voting scheme on shape parameters. It is slightly similar
+to RANSAC. \\ 
+The applications include finding signs in an image (through detecting rectangles and circles), 3D reconstruction of
+buildings, the eye in a face, the ball in a scene, and so on. The challenge is that the image usually contains lots of
+irrelevant information (edges unrelated to the shape or due to noise), and partial occlusions.
+
+One can differentiate the image, set a threshold, and then the remaining pixels are part of the edges. Given an edge
+image, we would like to group sets of edge pixels to identify dominant lines in an image. One possibility is to perform
+template matching in the edge image. Here we generate a hypothetical line \enquote{kernel}, and convolve with the image.
+This requires a large set of masks to accurately localize lines, which is computationally expensive. We will instead
+perform an edge image transformation where edge pixels vote for possible lines. This eventually reduces the problem to
+vote thresholding.
+
+Recall, the \textbf{parameter space} is a space of $a, b$. So each line in the image, is a point in the parameter space,
+since a line is composed of $y = ax + b$, so the $\left(a, b\right)$ are the coordinates of the point in parameter
+space. In contrast, a line in parameter space, is a \textbf{point} in the image. We can transfer sides, and get \begin{gather}
+    y = ax + b
+\end{gather}
+However, remember for a point, we know $x, y$ so we may: \[
+    b = -xa + y
+\]
+So for a point $\left(x, y\right)$ there are an infinite number of lines $b = -xa + y$ passing through it. 
+
+\subsection{Use a voting scheme}\label{sub:use_a_voting_scheme} % (fold)
+We will apply an \textit{edge detector} on the image, either through the derivative with a threshold, or using Canny's
+method. We will then prepare a table $h \left(a, b\right)$, for $a, b$ in a certain range. We will then loop over the
+image, for each pixel $\left(x, y\right)$ on an edge \textit{vote} for all the cells $\left(a, b\right)$ which satisfy
+the exation $y = ax + b$. This means that we increase the cell counter $h \left(a, b\right)$. We then choose the cell
+which has the maximum value (or the cells which pass a given threshold).
+% subsection Use a voting scheme (end)
+
+\subsection{Example}\label{sub:example} % (fold)
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_hough_example}
+    \caption{Example: Slope intercept representation}
+\end{figure}
+% subsection Example (end)
+
+However, this representation has some issues. Vertical lines are not covered by the
+representation $y = ax + b$. Additionally, there is no way to select the range of values for the
+table. There are infinite values for $a, b$ that may be within the image, so the table must be prepared to handle these
+infinite values. Additionally, we cannot quantise $a, b$. They are both values in $\R$.
+% section Hough Transform (end)
+
+\subsection{A better representation}\label{sub:a_better_representation} % (fold)
+We can instead use polar representation, where: \[
+    d = x \cos \left(\theta\right) + y \sin \left(\theta\right)
+\]
+Here, $d$ is the distance from the origin $\left(0, 0\right)$, and $\theta$ is the angle relative to the $x$ axis. So
+now, a point in the image will be translated to a sinusoidal function in $r-\theta$ space. Points of intersections of
+these sinusoidal functions will estimate the line equation.
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_hough_polar}
+    \caption{Hough transform with polar representation}
+\end{figure}
+
+We can note immediate improvements, this can handle the vertical lines that could not be handled, we can limit the
+values to specific ranges ($r$ is in $\left[0, 359\right]$, $d$ is less clear, so it is unlikely to appear on an exam,
+but could just be the size of the image), and we can quantise them to $\N$.
+
+% subsection A better representation (end)
+
+\subsection{Smoothing}\label{sub:smoothing} % (fold)
+Without smoothing then a point will refer to a line, but when we smooth, then the point is expanded in size, and thus
+the line is expanded into a valley: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_smoothing}
+    \caption{Smoothing}
+\end{figure}
+This helps resolve the issue of noise in the image, since it removes individual pixel noise lines.
+% subsection Smoothing (end)
+
+\subsection{Making a decision}\label{sub:making_a_decision} % (fold)
+So now we want to find the two dominant lines in the image. The problem is that if $\left(r, \theta\right)$ is the cell
+with the maximal value, then $\left(r + \varepsilon, \theta + \varepsilon\right)$ will also get high scores. To resolve
+this we only search for local maxima. 
+
+We can also add in the local gradient, and then a line in the image will point to a cluster of points in the Hough
+transform, rather than a single point. % TODO go over this, aroudn 1035-1040
+% subsection Making a decision (end)
+
+\subsection{Complex shapes}\label{sub:complex_shapes} % (fold)
+\subsubsection{Circles}\label{sec:circles} % (fold)
+Perhaps we also want to detect circles in the image, which are not just constructed of straight lines (I mean, that is
+quite literally their definition). A naïve solution would be to construct a table $h \left(a, b, r\right)$, and for each
+pixel $\left(x, y\right)$ which is an edge in the image, vote for all the cells satisfying \[
+    \left(x - a\right) ^ {2} + \left(y - b\right) ^ {2} = r ^ {2}
+\]
+However, the size of the table is $O \left(n ^ {3}\right)$, and the voting for each pixel takes $O \left(n ^
+{2}\right)$. The solution is to use the gradient information, so you vote only for centres $\left(a, b\right)$ in the
+gradient direction. We could also use a more advanced solution, and vote with complex numbers. 
+
+With no orientation, each token (point) votes for all possible circles that pass through that point (infinite). With
+orientation, then each token can vote for a smaller number of circles. Realistically, only 2, since we have limited the
+size of the circle, and stated the direction of the circle at that point, so it is tangent to only 2 circles. 
+
+Consider this example for finding circles: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_example_penny}
+    \caption{Penny}
+\end{figure}
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_8_example_penny_hough}
+    \caption{Hough transforms for finding the penny}
+\end{figure}
+Here we can see that there are 2 different transforms for the different sizes, and the penny only shows up in the image
+looking for circles the right size, and in the right image where we are using larger radii, the penny does not appear,
+only the quarters.
+
+% subsubsection Circles (end)
+% subsection Complex shapes (end)
+
+\section{Colour}\label{sec:colour} % (fold)
+
+% section Colour (end)
+
+\end{document}
