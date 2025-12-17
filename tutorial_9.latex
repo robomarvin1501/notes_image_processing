@@ -1,0 +1,217 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
+
+\title{Tutorial 9 - Neural Networks}
+\author{Gidon Rosalki}
+\date{2025-12-17}
+
+
+\begin{document}
+\maketitle
+
+\section{Learning}\label{sec:learning} % (fold)
+The traditional goal of learning is to learn a mapping $f \left(x\right)$ from a domain set $ \mathcal{X} $ to a label
+set $\mathcal{Y}$. There are two common settings: \begin{itemize}
+    \item Classification: Here $\mathcal{Y}$ is discrete, where each $y \in \mathcal{Y}$ represents a class 
+    \item Regression: $\mathcal{Y}$ is continuous
+\end{itemize}
+
+\begin{table}[H]
+     \centering
+     \begin{tabular}{|p{0.27\textwidth}|p{0.27\textwidth}|p{0.27\textwidth}|}
+         \hline
+         $\mathcal{X}$ & $\mathcal{Y}$ & $f \left(x\right)$ \\ \hline
+         Images of an animal & \{Cat, dog, deer, $\dots$\} & Recognise the animal in the image \\ \hline
+         Sounds of speech & Words in English & Converts speech to text \\ \hline
+         Images of faces & $\R ^ {2}$ & Returns location of the mouth in the image \\ \hline
+         Corrupted images & Natural images & Restores a corrupted image to its original version \\ \hline 
+     \end{tabular}
+     \caption{Examples}
+\end{table} 
+
+To learn \textit{parametric functions}, we have a training set which is a collection of labelled samples: \[
+    S = \left\{\left(x_i \in \mathcal{X}, y_i \in \mathcal{Y}\right)\right\}_{i = 1} ^ {n}
+\]
+The \textit{hypothesis space} is a set of parametric functions: \[
+    \mathcal{H} = \left\{f_{\theta} \left(x\right) | \theta \in \R ^ {S}\right\}
+\]
+This could be: \begin{itemize}
+    \item Linear functions where $f \left(x\right) = \displaystyle\sum_{i = 1}^{S}x_i \cdot w_i$, parametrised by a
+        vector $w \in \R ^ {S}$
+    \item Linear transformations $f \left(x\right) = A x$, parametrised by a matrix $A \in \R ^ {d \times S}$
+    \item Neural networks
+\end{itemize}
+Our \textbf{goal} is to find parameters $\theta$ such that $f_\theta \in \mathcal{H}$ is the \enquote{best fit}  for the
+training set $S$. Not all parameters are learned, there are also hyper-parameters that we set beforehand.
+
+\subsection{Best fit}\label{sub:best_fit} % (fold)
+We need to consider what it means to be a \enquote{best fit}. We need to define how good a fit is, so to do this we
+define a loss function $L \left(f, S\right)$, which measures the \enquote{error}  of $f$ with respect to $S$. A lower
+loss will mean a better fit. This has transformed our \textbf{goal} to finding $f^*$ that minimises the loss: \[
+    f^* =  \displaystyle\argmin_{f \in \mathcal{H}} \left\{L \left(f, S\right)\right\} 
+\]
+For example: \begin{itemize}
+    \item \textbf{0 - 1 Loss}: the percentage of examples on which $f$ is wrong: \[
+            L_{0 - 1} \left(f, S\right) = \displaystyle\frac{\text{number of times } f \left(x_i\right) \ne y_i}{
+            \left|S\right|}
+        \]
+        This is not particularly used, since it is not great.
+    \item \textbf{Mean squared error}: Average distance of $f \left(x_i\right)$ from $y_i$ \[
+            L_{MSE} \left(f, S\right) = \displaystyle\frac{1}{\left|S\right|} \displaystyle\sum_{i}^{} \left|\left|f
+            \left(x_i\right) - y_i\right|\right| ^ {2}
+        \]
+    \item \textbf{Cross Entropy Loss}: Assume that $f \left(x\right)$ outputs the probabilities of $x$ belonging to each
+        possible class. Use the probability of choosing the correct class on all examples. \[
+            \text{Loss} = - \displaystyle\frac{1}{n} \displaystyle\sum_{j = 1}^{n} \log \left(f \left(x_{j,
+            \text{correct}}\right)\right)
+        \]
+        Where $f \left(x_{j, \text{correct}}\right)$ is the probability assigned by the model to the correct class for
+        $x_i$
+\end{itemize}
+
+So as we can see, we want to minimise the loss function. If $L \left(f, S\right)$ is a differentiable function, then we
+can use \textbf{Gradient Descent}. The key principle here is that at each iteration $i$ of GD, we take a step in the
+direction of the steepest descent: \[
+    \theta_i = \theta_{i - 1} - \eta \triangle f_{\theta_{i - 1}}
+\]
+The step size is the learning rate, called $\eta$, is a hyper-parameter. You need to pick a value that is not too large
+(will miss the minimum), and not too small (will take forever to finish).
+
+If $\left|S\right|$ is large, then every GD iteration is expensive. Instead, we approximate it using a small, randomly
+chosen batch $B \subset S$. This is called \textbf{stochastic gradient descent}. This has the loop: \begin{enumerate}
+    \item Sample a random batch $B \subset S$ 
+    \item Compute the gradient of $L \left(f, B\right)$ with respect to the parameters of $f$ 
+    \item Update parameters of $f$ using the gradient
+\end{enumerate}
+We perform enough steps until we have covered the entire dataset, called an \textbf{epoch}. We perform multiple epochs
+during training. Original SGD could be difficult to use for non experts, so instead ADAM is a variant of SGD which is
+easier to use in practice.
+
+\subsubsection{Generalisation and overfitting}\label{sec:generalisation_and_overfitting} % (fold)
+Let us assume that we have a model that fits the training set. We do not know if it is any good, it could
+\textbf{overfit} the data, and be terrible for unseen data as a result. In order to avoid this, we must evaluate the
+model on unseen data. To do this, before training we split our available data into training, validation, and test sets.
+Then, when training, we choose hyper-parameters using the validation set.
+% subsubsection Generalisation and overfitting (end)
+% subsection Best fit (end)
+
+\subsection{Summary}\label{sub:summary} % (fold)
+We want to fit a parametric function $f_\theta \left(x\right)$ to a training set $S$. We measure the fitness with a loss
+function $L \left(f_\theta, S\right)$:\begin{itemize}
+    \item For classification we generally use cross entropy loss 
+    \item For regression we typically use mean squared error
+\end{itemize} 
+We find the best $f_\theta$ by minimising the loss. For minimisation we use SGD, or one of its variants. Models must be
+evaluated on unseen data in order to avoid overfitting. 
+% subsection Summary (end)
+% section Learning (end)
+
+\section{Neural Networks}\label{sec:neural_networks} % (fold)
+In broad terms, a neural network is a directed acyclic graph of differentiable operations. Each node is called a
+\textit{layer}, defined by its type and parameters. All the parameters together are the \textit{weights} of the network.
+The \textit{depth} of the network is the longest path from the input to the output. When learning, we fix the structure,
+or \textit{architecture}, and only learn the weights. A network is called \textit{feed-forward} if every node has at
+most one input, and one output connected. 
+
+Intermediate results are \textit{Tensors}. Tensors are a fancy term fora  multi dimensional array $A \in \R ^ {M_1
+\times \dots \times M_n}$. $A$ is an $nD$ tensor with the shape being the tuple $\left(M_1, \dots, M_n\right)$. Images
+are 3D tensors of the shape $\left(\text{channels}, \text{height}, \text{width}\right)$. For RGB, then channels = 3, and
+for greyscale channels = 1. The convention in PyTorch is NCHW (batch size, channels, height, width), but some other
+frameworks use NHWC (Keras). The input and output of each layer are expressed as tensors. The shape and dimension of the
+output depends on the type of the layer. 
+
+\subsection{Common layers}\label{sub:common_layers} % (fold)
+\subsubsection{Linear / Fully connected}\label{sec:linear_fully_connected} % (fold)
+The \textbf{operation} is $f \left(x\right) = Ax + b$. The \textbf{input} is some assumed $x \in \R ^ {N}$, and the
+\textbf{output} is $y \in \R ^ {M}$. The \textbf{hyper-parameter} is $M$, the output dimension. It has the
+\textbf{learned parameters} of the weights matrix $A \in \R ^ {N \times M}$, and the bias vector $b \in \R ^ {M}$
+% subsubsection Linear / Fully connected (end)
+
+\subsubsection{Activation}\label{sec:activation} % (fold)
+The \textbf{operation} is to apply a point wise non-linear function $\sigma: \R \to \R$, called the \textit{activation
+function}, on every entry (neuron) of the input tensor: \begin{itemize}
+    \item ReLU: $\sigma \left(z\right) = \displaystyle\max_{} \left\{z, 0\right\} $
+    \item Hyperbolic tangent: $\sigma \left(z\right) = \tanh \left(z\right)$
+    \item Sigmoid: $\sigma \left(z\right) = \displaystyle\frac{1}{1 + \exp \left(-z\right)}$
+\end{itemize}
+This takes the \textbf{input} of any tensor of some shape, and returns an \textbf{output} that is the same shape as the
+input. It typically takes no \textbf{hyper-parameters}, but there is an exception of LeakyReLU: $\sigma \left(z\right) =
+\displaystyle\max_{} \left\{z, 0.01 z\right\} $. There are also typically no \textbf{learned parameters}, with the
+exception of PReLU: $\sigma \left(z\right)= \displaystyle\max_{} \left\{z, \alpha z\right\} $ where $\alpha$ is learned
+% subsubsection Activation (end)
+
+\subsubsection{Convolution}\label{sec:convolution} % (fold)
+The \textbf{operation} is to convolve the input with a set of kernels. We will run the convolution on each of the layers
+independently, then combine them together. Each different kernel will give us a different output channel. It takes the
+\textbf{input} of a 3D tensor of the shame $\left(\text{in\_channels}, \text{height}, \text{width}\right)$, and
+\textbf{outputs} a 3D tensor of the shape $\left(\text{out\_channels}, \text{height}, \text{width}\right)$. The
+\textbf{hyper-parameters} are \begin{enumerate}
+    \item A spatial shape of kernel $k \times k$ 
+    \item Number of kernels $M$ (number of output channels)
+\end{enumerate}
+It has the following \textbf{learned parameters}: For $1 \leq j \leq M$ the kernel $w_j \in \R ^ {C \times K \times K}$,
+where $C$ is the number of input channels. 
+% subsubsection Convolution (end)
+
+\subsubsection{Pooling}\label{sec:pooling} % (fold)
+The \textbf{operation} is to sub-sample each input channel. There are two main types: \begin{itemize}
+    \item Average pooling: Replace every window with its average value 
+    \item Max pooling: REplace eevery window iwth its maximum value
+\end{itemize}
+
+The \textbf{input} is a 3D tensor of shape $\left(\text{in\_channels}, \text{height}, \text{width}\right)$, and returns
+an \textbf{output} which is a 3D tensor of the shape $\left(\text{in\_channels},
+\displaystyle\frac{\text{height}}{\text{window height}}, \displaystyle\frac{\text{width}}{\text{window width}}\right)$.
+It takes the \textbf{hyper-parameter} of the size of the pooling window (typically $2 \times 2$), and has no
+\textbf{learned parameters}.
+
+
+% subsubsection Pooling (end)
+% subsection Common layers (end)
+
+% section Neural Networks (end)
+
+\section{PyTorch}\label{sec:pytorch} % (fold)
+
+% section PyTorch (end)
+
+\section{Classification}\label{sec:classification} % (fold)
+
+% section Classification (end)
+
+\end{document}
