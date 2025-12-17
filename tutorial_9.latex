@@ -207,11 +207,100 @@ It takes the \textbf{hyper-parameter} of the size of the pooling window (typical
 % section Neural Networks (end)
 
 \section{PyTorch}\label{sec:pytorch} % (fold)
-
+There are many deep learning frameworks, like keras, tesnorflow, PyTorch, and so on. We will be using PyTorch in this
+course. Teh API is very similar to numpy. The data, and models are loaded by default to the CPU. NN computations are
+very computationally expensive, and slow on the CPU, but well aimed for GPUs, so we will prefer running on the GPU,
+where computations are much faster. In PyTorch, we have to explicitly move tensors and the model to the GPU (and back to
+CPU). Datasets and Neural networks are written as classes. % TODO new slides with PyTorch, may not need the slides
 % section PyTorch (end)
 
 \section{Classification}\label{sec:classification} % (fold)
+To classify, we need datasets from which to learn. For example, there is MNIST, a very large dataset of handwritten
+digits, each is a $28 \times 28$ greyscale image. There are 60,000 training images, and 10,000 test images. There is
+also CIFAR10, which has 10 categories aeroplane, vehicle, bird, cat, deer, dog, frog, horse, ship, and truck. Each
+image is a $32 \times 32$ colour image, and there are 50,000 training images, and 10,000 test images. \\ 
+There is also IMAGENET, which has 1,000 classes, for $256 \times 256$ colour images, and around 1.2M of them.
 
+Data augmentation is a technique to artificially enlarge the training set. For example, we can take images, and add
+flips, rotations, crops, colour jitter, noise, and so on. In short, we apply simple transformations, while keeping the
+label the same. This helps reduce overfitting, and improve generalisation.
+
+\subsection{CNNs}\label{sub:cnns} % (fold)
+This is a convolutional neural network. CNN is a general term for neural networks that apply convolutions. They
+typically use convolution layers in the early stages, and linear (fully connected) layers in the final stages. \\ 
+In these networks, the \textit{receptive field} is the region of the input that influences a specific neuron's
+activation. So if we convolve with a $3 \times 3$ window each layer, then in layer 2 the receptive field is $3 \times
+3$, but in layer 3 it will be $5 \times 5$: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_9_receptive_field.png}
+    \caption{Receptive fields}
+\end{figure}
+
+We also use something called \textit{dropout}. This is another technique to avoid overfitting. Here, we randomly drop
+units (e.g. neurons) during training, which prevents co adaptations. Units are trained according to a loss that is
+dependent on all units (i.e. what all the units are doing). Units may change to \enquote{fix} the mistakes of other
+units. This builds complex adaptations that do not generalise to unseen data. Model combination improves performance,
+and dropout approximates combining many different models. \\
+In general, this is preventing each individual unit from memorising some answer.
+
+% subsection CNNs (end)
+
+\subsubsection{ZFNet}\label{sub:zfnet} % (fold)
+We will not talk about this network itself, since it is not especially interesting, but rather interesting things
+learned from it. It was established that different kernels turned on and off by differing amounts for different textures
+/ colours. 
+% subsection ZFNet (end)
+
+\subsubsection{VGG}\label{sec:vgg} % (fold)
+This was an interesting paper on Very Deep Convolutional Networks for Large Scale Image Recognition. Here they
+theorised instead of using large kernels between layers, we can use lots of smaller kernels, which will together
+have the same receptive field as a larger kernel. For example, 3 $3 \times 3$ kernels have the same receptive field as a
+$7 \times 7$ kernel. This is good since we have more non linearities (deeper), and fewer parameters: \[
+    3 \cdot \left(3 ^ {2} C ^ {2}\right) = 27 C ^ {2} < 7^2 C^2 = 49 C^2
+\]
+Where $C$ is the number of input and output channels. This also means that there is no local response normalisation, adn
+is a good basis for transfer learning. 
+% subsubsection VGG (end)
+
+\subsubsection{GoogLeNet}\label{sec:googlenet} % (fold)
+Then Google (surprise surprise) created GoogLeNet, where they basically went \enquote{let's go deeper}. It includes
+deeper networks, with 22 layers, greater computational efficiency. They are
+not fully connected, and have fewer parameters, with 5M parameters, in comparison to AlexNet which has 60M, and VGG16
+which has 138M. It also uses something called the \textit{inception module}.
+
+The \textit{inception model} may be naïvely seen as: 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_9_inception_model.png}
+    \caption{Inception model, naïve version}
+\end{figure}
+
+A more complex model adds a dimension reductoin, but adding more convolutions to each of the 3 rightmost convolutions.
+% subsubsection GoogLeNet (end)
+
+\subsubsection{ResNet}\label{sec:resnet} % (fold)
+Let $F \left(x\right)$ be a sequence of regular layers. In a \textit{residual block}, we merge $F \left(x\right)$ with
+the input $x$, and return \[
+    H \left(x\right) = F \left(x\right) + x
+\]
+The addition of $x$ to the output of the computation is called \textit{skip connection}. A residual block can contain
+any number of layers and any type.
+
+It was noticed that for a 56 layer model, there was a greater loss than for a 20 layer model, on CIFAR-10 ResNet was
+created to resolve this, it is composed of  asequence of residual blocks, in addition to standard layers. It allows
+training very deep networks with \begin{itemize}
+    \item Vanishing gradient
+    \item Shallow to deep architecture
+\end{itemize}
+For example, with 152 layers, it uses batch normalization after each convolution layer.
+% subsubsection ResNet (end)
+
+\subsection{Other tasks}\label{sub:other_tasks} % (fold)
+There are other computer vision tasks, such as classifying and detecting objects in an image (like fruit, dogs, people,
+ties, number plates, and so on). We can also use these models to do semantic segmentation, where we identify different
+parts of an image (i.e. the person riding a horse, the horse, and other horses in the field).
+% subsection Other tasks (end)
 % section Classification (end)
 
 \end{document}
