@@ -150,7 +150,11 @@ $D \left(x\right) \to 1$), to the output on generated images (such that for imag
 \left(z\right)\right) \to 0$). In contrast, $G$ is trained to minimise it, such that $D \left(G \left(z\right)\right)
 \to 1$. \\ 
 They are trained using an iterative approach. You begin by fixing the generator, and training the discriminator: \[
-    % TODO 23
+    \displaystyle\max_{D} \left\{\E_{x \sim p_{data} \left(x\right)} \left[\log D \left(x\right)\right] + \E_{z \sim p_z
+    \left(z\right)} \left[\log \left(1 - D \left(G \left(z\right)\right)\right)\right]\right\} 
+\]
+Then you fix the discriminator, and train the generator: \[
+    \displaystyle\min_{G} \left\{\E_{z \sim p_z \left(z\right)} \left[\log \left(1 - D \left(G \left(z\right)\right)\right)\right]\right\} 
 \]
 
 Training GANs is very difficult, and unstab;e. It does not always converge, since parameters are unstable, so they will
