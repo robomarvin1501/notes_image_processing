@@ -132,8 +132,78 @@ space, so we encourage teh latent vector to be normally distributed. Instead of 
 mean standard deviation, and use them to sample from the normal distribution. The loss would now be both the
 reconstruction loss $\left|\left|x - \widehat{x}\right|\right| ^ {2}$, and the regularisation loss $KL \left[N
 \left(\mu_x, \sigma_x\right) \| N \left(0, 1\right)\right]$. 
-
 % subsubsection VAE - Variational autoencoders (end)
+
+\subsubsection{GAN - generative adversarial networks}\label{sec:gan_generative_adversarial_networks} % (fold)
+This is a two player game: \begin{itemize}
+    \item Generator network $G$: This generates images that will look real enough to fool $D$ 
+    \item Discriminator network $D$: Distinguish between real images, and images produced by $G$
+\end{itemize}
+Both networks are trained together in a minmax game, the discriminator is trained to maximise the difference between
+real and fake images, and the generator is trained to minimise it: \[
+    \displaystyle\min_{G} \left\{\displaystyle\max_{D} \left\{V \left(G, D\right)\right\} \right\}  = \E_{x \sim
+    p_{data} \left(x\right)} \left[\log D \left(x\right)\right] + \E_{z \sim p_z \left(z\right)} \left[\log \left(1 - D
+\left(G \left(z\right)\right)\right)\right]
+\]
+So the discriminator is trained to maximise the difference between its output on real images (such that for image $x$,
+$D \left(x\right) \to 1$), to the output on generated images (such that for image $G \left(z\right)\ D \left(G
+\left(z\right)\right) \to 0$). In contrast, $G$ is trained to minimise it, such that $D \left(G \left(z\right)\right)
+\to 1$. \\ 
+They are trained using an iterative approach. You begin by fixing the generator, and training the discriminator: \[
+    % TODO 23
+\]
+
+Training GANs is very difficult, and unstab;e. It does not always converge, since parameters are unstable, so they will
+oscillate when training and may never converge. Additionally, they can undergo mode collapse, where the generator always
+produces the same kind of images. Finally, a strong discriminator causes small vanishing gradients for the generator.
+They are also very sensitive to choice of hyperparameters. 
+% subsubsection GAN - generative adversarial networks (end)
+
+\subsubsection{StyleGAN}\label{sec:stylegan} % (fold)
+We want better understanding of GANs and latent space. StyleGAN incorporates ideas from style transfer to separate high
+level attributes (pose, identity, etc.) from stochastic variation (freckles, hair, etc. ) in generated images. This only
+modifies the generator. Instead of using $z$ as the input the to generator, we first map it
+to an intermediate latent space $W$ using a non-linear mapping $f: Z \to W$. $w$ will be inserted into the generator as
+a style \enquote{hint}, and noise inputs are also given to the generator to help it generate stochastic detail. 
+% subsubsection StyleGAN (end)
+
+\subsubsection{ViT - vision transformers}\label{sec:vit_vision_transformers} % (fold)
+Let us begin by discussing CLIP. CLIP stands for Contrastive Language Image Pretraining. It's goal is to teach a model
+to understand which text matches which image. Instead of predicting models, CLIP learns to match the correct image, with
+the correct text, and separate mismatched pairs.
+
+The \textbf{attention mechanism} was originally developed for NLP tasks. Since not all words in a sentence are equally
+important, attention lets the model focus on relevant words. Attention works by havign each word create a Query, Key,
+Value vector. It scores how much one word relates to another, and the weighted sum gives a context vector for each word.
+This enables the model to capture meaning across the whole sentence. \begin{gather}
+    \text{Attention} \left(Q, K, V\right) = \text{softmax} \left(\displaystyle\frac{Q K ^ {T}}{\sqrt{d_k} }\right) V \\
+\end{gather}
+
+There is also \textit{cross attention}, which is a mechanism where one set of features attends to another set. This lets
+information flow between two different sources. 
+
+So, ViT has us take an image, and separate it into patches. We then multiply each vectorised patch by a matrix to
+transfer us to some other space, these are passed through embeddings, and we have build a transformer encoder that
+classifies the patches.  
+% subsubsection ViT - vision transformers (end)
+
+\subsubsection{Diffusion models}\label{sec:diffusion_models} % (fold)
+Diffusion models learn to invert a parameterised Markovian image noising process. This can generate high quality images.
+More simply, they take random noise, and slowly de-noise them to generate high quality images. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_10_denoising}
+    \caption{Denoising}
+\end{figure}
+In general, in generative models, we try to learn the probability distribution $p \left(x\right)$. So in diffusion
+models, what we learn is the \enquote{direction} each point should move in order to reach the true distribution.
+
+There are a couple of problems: \begin{enumerate}
+    \item The model is unconditioned, so it generates a random image without any prompt or guidance.
+    \item For large images, the generation process takes a long time.
+\end{enumerate}
+
+% subsubsection Diffusion models (end)
 
 % subsection Unsupervised learning (end)
 
