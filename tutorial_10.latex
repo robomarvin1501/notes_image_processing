@@ -1,0 +1,142 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Tutorial 10}
+\author{Gidon Rosalki}
+\date{2025-12-31}
+
+
+\begin{document}
+\maketitle
+\section{Fine tuning}\label{sec:fine_tuning} % (fold)
+Training a model from scratch has a few challenges. It takes an incredibly long time, since improvement is a slow
+process, and there are many weights (millions) to train. It needs as a result huge amounts of electricity, and data,
+which can be expensive, and hard to attain accordingly. The idea of fine tuning is to take a model that has already been
+trained on a task, and adjust it to our intended task. This way, we need far less data, and time to train.
+
+For example, we could start with a model trained on a large dataset (such as ImageNet or MNIST), keep the learned
+features (edges, shapes, textures), and then train it with a smaller dataset. We need to be careful to only train it a
+little, in order to avoid overfitting. 
+% section Fine tuning (end)
+
+\section{Low Rank Adaption - LoRA}\label{sec:lora} % (fold)
+The key idea is to adapt big models with small changes. This is a method for fine tuning large models
+\textit{efficiently}. Instead of updating all weights, LoRA adds small trainable matrices (which are low rank updates).
+The original model weights stay frozen, it simply learns a few extra parameters. This is much faster, and needs less
+memory than full fine tuning. The resultant model involves: \begin{gather}
+    \text{Frozen: } W \in \R ^ {n \times m} \\
+    \text{Trained: } A \in \R ^ {r \times m},\ B \in \R ^ {n \times r} \\ 
+    r \text{ is usually very small, so 4 or 8: } r \ll n, m \\ 
+    h = \left(W + BA\right)x
+\end{gather}
+% section LoRA (end)
+
+\section{Generative models}\label{sec:generative_models} % (fold)
+There are two main types of model. Discriminative (aimed at classification or regression) which attempts to learn $p
+\left(y | x\right)$, and maps inputs to labels / values. There are also \textbf{generative} models, which learn $p
+\left(x\right)$ or $p \left(x, y\right)$, where the idea is how to model, or \textit{generate} new data.
+
+\subsection{Loss functions}\label{sub:loss_functions} % (fold)
+For a model with the output of an image, rather than a single number or class label, we need to use different types of
+loss functions. Firstly we have $L_1$: \begin{gather}
+    L_1 \left(I_t, I_o\right) = \left|\left|I_t - I_o\right|\right|_1 = \displaystyle\frac{1}{N} \displaystyle\sum_{x,
+    y}^{} \left|I_t \left[x, y\right] - I_o \left[x, y\right]\right|
+\end{gather}
+$I_t$ is the target image, and $I_o$ is the model output image. This gives sharper, but possibly noisier results. We
+also have $L_2$: \begin{gather}
+    L_1 \left(I_t, I_o\right) = \left|\left|I_t - I_o\right|\right|_2 ^ {2} = \displaystyle\frac{1}{N} \displaystyle\sum_{x,
+    y}^{} \left(I_t \left[x, y\right] - I_o \left[x, y\right]\right) ^ {2}
+\end{gather}
+$L_2$ will give blurrier, but globally accurate results. 
+
+There is also perceptual loss, which is feature based. It measures the difference between images in a deep feature space
+(pre trained VGG / ResNet), encouraging the generated image to look perceptually similar to the target, rather than just
+matching the pixel values: \[
+    L_{VGG} \left(I_t, I_o\right) = \left|\left|\phi_l \left(I_t\right) - \phi_l \left(I_o\right)\right|\right|_2 ^ {2}
+\]
+We may see the differences in the below example:
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_10_loss_diff}
+    \caption{Loss differences}
+\end{figure}
+
+% subsection Loss functions (end)
+
+\subsection{Unsupervised learning}\label{sub:unsupervised_learning} % (fold)
+Generally, we use something called unsupervised learning. We generate new samples from the same distribution of the
+training data. A generative model needs to be Sufficient: for every image $x$ there must be $z : G \left(z\right) = x$,
+and compact, for every $z$, $G \left(z\right)$ should be a valid image in $X$. There are many ways to address this
+problem: \begin{itemize}
+    \item Auto-regressive pixel generation
+    \item VAE – variational autoencoders
+    \item GAN – generative adversarial networks
+    \item ViT – vision transformers
+    \item Diffusion models
+\end{itemize}
+
+\subsubsection{Auto-Regressive pixel generation}\label{sub:auto_regressive_pixel_generation} % (fold)
+There exists PixelCNN, which uses all previously generated pixels to predict the next one, using auto-regressive
+convolutions. This creates nice results, but is very slow, since it only generates one pixel at a time: \[
+    p \left(x\right) = \displaystyle\prod_{i = 1}^{n ^ {2}}p \left(x_i | x_1, \dots, x_{i - 1}\right)
+\]
+% subsection Auto-Regressive pixel generation (end)
+
+\subsubsection{VAE - Variational autoencoders}\label{sec:vae_variational_autoencoders} % (fold)
+An autoecnoder compresses the input to a low dimensional latent vector. This is done with unsupervised learning, adn the
+loss is \[
+    \left|\left|x - \widehat{x}\right|\right| ^ {2}
+\]
+The latent vector can be the input to a supervised classification network. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_10_autoencoders}
+    \caption{Autoencoders}
+\end{figure}
+
+So, for VAE we sample latent vectors to create new images. We need to enforce some \enquote{arrangement} on the latent
+space, so we encourage teh latent vector to be normally distributed. Instead of learning the latent vector, we learn the
+mean standard deviation, and use them to sample from the normal distribution. The loss would now be both the
+reconstruction loss $\left|\left|x - \widehat{x}\right|\right| ^ {2}$, and the regularisation loss $KL \left[N
+\left(\mu_x, \sigma_x\right) \| N \left(0, 1\right)\right]$. 
+
+% subsubsection VAE - Variational autoencoders (end)
+
+% subsection Unsupervised learning (end)
+
+% section Generative models (end)
+
+\end{document}
