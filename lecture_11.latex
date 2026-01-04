@@ -1,0 +1,169 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 11 - 3D imaging geometry}
+\author{Gidon Rosalki}
+\date{2026-01-04}
+
+
+\begin{document}
+\maketitle
+\section{Reminder}\label{sec:reminder} % (fold)
+We will begin by discussing models from the first lecture. The pinhole model has all the rays of the scene pass through
+a single point. This point is called the Centre of Projection (COP), or focal point. It results in a 2D image being
+formed on the Image Plane, and the focal length $f$ is distance from COP to the Image Plane. \\
+Perspective projection involves transforming the 3D world (X, Y, Z) into a 2D image (x, y). This may be done through
+continuous perspective projection (optics), and all rays must pass through one focal point, where $f = $focal length. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_11_perspective_projection.png}
+    \caption{Perspective projection}
+\end{figure}
+
+When world and camera use same X, Y axes, and origin of world axes (X=0, Y=0, Z=0) is at camera’s optical centre, then
+the camera matrix is given by \[
+    \begin{bmatrix}
+        fX \\
+        fY \\
+        Z \\
+    \end{bmatrix} = \begin{bmatrix}
+        f & - & - & 0 \\
+        0 & f & - & 0 \\
+        - & - & 1 & 0 \\
+    \end{bmatrix} \begin{bmatrix}
+        X \\
+        Y \\
+        Z \\
+        1 \\
+    \end{bmatrix}
+\]
+
+% TODO 5 Hom coord table
+A camera in a general position, and not at the world origin % TODO tables 6 
+There is always a 1 in the bottom right hand corner, and there are 11 degrees of freedom. 
+
+In general, the camera matrix $M$ has 11 degrees of freedom (there are 12 parameters, but the scale is arbitrary). 5 are
+\textit{intrinsic}, these are the camera parameters, and are comprised of $f_x, f_y$, Centre $\left(c_x, c_y\right)$,
+and the skew. 6 are \textit{extrinsic}, demarking the camera location, 3 for rotation, and 3 for translation. One
+correspondence between a 2D image point $\left(x, y\right)$ to a 3D world point $\left(X, Y, Z\right)$ gives two
+independent linear equations ($m_{ij}$ are unknowns), one for $x$ and one for $y$. At least 6 correspondences between 3D
+points and image points needed to compute $M$. To calibrate a camera, given $n \geq 6$ points with known 3D coordinates
+$X_i$, and known image projections $x_i$, estimate the camera parameters by solving the equations (think of looking at a
+known scene, with dots on it, sort of vaguely like motion capture of actors).
+
+Since we know that \[
+    \begin{bmatrix}
+        x \\
+        y \\
+        1 \\
+    \end{bmatrix} \sim \begin{bmatrix}
+    m_{00} & m_{01} & m_{02} & m_{03} \\
+    m_{10} & m_{11} & m_{12} & m_{13} \\
+    m_{20} & m_{21} & m_{22} & 1 \\
+    \end{bmatrix} \begin{bmatrix}
+        X \\
+        Y \\
+        Z \\
+        1 \\
+    \end{bmatrix}
+\]
+So the camera maps each of the 3D points $\left(X_i, Y_i, Z_i\right)$ to an image point $\left(x_i, y_i\right)$: \begin{gather}
+    x_i = \displaystyle\frac{}{} \\
+    y_i = \displaystyle\frac{}{} % TODO 9, 10
+\end{gather}
+% section Reminder (end)
+
+\section{Time to collision}\label{sec:time_to_collision} % (fold)
+A bus is moving towards the camera. When will it collide with the camera? Well, if we put a ruler across the ruler, we
+may see that the bus width is doubled after 2 seconds. Therefore, in 2 seconds, it has travelled half the distance
+between us, so it will hit the camera in another 2 seconds. So, given 2 images, one taken at $T_1$, and the seconds at
+$T_2$, we may compute the time to collision without knowing the size, the speed, or the distance of the bus, or event he
+camera matrix. 
+
+At frame 1, the image width of the bus is $x_1$. At frame 2, the image widht of the bus is $x_2$. Therefore \begin{align*}
+    TTC &= \displaystyle\frac{Z_1}{Z_1 - Z_2} \\ 
+        &= \displaystyle\frac{\frac{1}{Z_2}}{\frac{1}{Z_2} - \frac{1}{Z_1}} \\ 
+        &= \displaystyle\frac{f \frac{X}{Z_2}}{f \frac{X}{Z_2} - f \frac{X}{Z_1}} \\ 
+        &= \displaystyle\frac{x_2}{x_2 - x_1}
+\end{align*}
+Where the time is the number of frames. \\ 
+If $x_1 = x_2 \implies TTC = \infty$, and if $x_2 = 2x_1 \implies TTC = 2$.
+% section Time to collision (end)
+
+\section{Epipolar geometry}\label{sec:epipolar_geometry} % (fold)
+In epipolar geometry, we have 2 cameras. This leaves us with 3 questions: \begin{enumerate}
+    \item Correspondence geometry: Given an image point $x$ in the first image, how does this constrain the position of
+        the corresponding point $x'$ in the second image?
+    \item Camera geometry (camera motion): Given a set of corresponding image points between images, $\left\{x_i
+        \leftrightarrow x_i'\right\}$, where $i \in \left[n\right]$, what are the cameras matrices $M$ and $M’$ for the two
+        views?
+    \item Scene geometry (structure, stereo): Given corresponding image points between images, $x_i \leftrightarrowx_i'$
+        and cameras $M, M’$, what is the position of the 3D point $X$ in world coordinates? Or: what is the geometric
+        transformation between the views?
+\end{enumerate}
+
+Consider the epipolar line: Given an image point $x$, it may originate from any 3D point \lstinline[columns=fixed]{X} along a straight line through
+$C_L$ and $x$, where $C_L$ is the centre of the left camera. Given image point $x$, the corresponding point $x’$ in the
+second image can be anywhere along the epipolar line $l’$, which is the projection of the line connecting $C_L$ and $x$.
+
+We may also consider the epipolar plane: Two cameras with centres $C, C'$ view a 3D point $X$ in image points $x, x'$.
+All these points are on the epipolar plane $\pi$. The epipolar plane $\pi$ is determined by the points $C, C', X$. 
+
+The epipolar geometry is the camera baseline, connecting the two camera centres, intercepts the image planes at the
+epipoles $e, e'$. An plane $\pi$ containing the baseline is an epipolar plane. The epipole is the image at hte centre of
+the \textbf{other} camera.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_11_epipolar_geometry.png}
+    \caption{Epipolar geometry}
+\end{figure}
+All points on the epipolar plane project to the epipolar lines $I$ and $I'$. Therefore, it cannot be a physical plane,
+like the floor, since the floor will not interact with the baseline. \\ 
+so, the epipoles are the intersection of the baseline with an image plane, or the image projection centre (pinhole), of
+the other camera. The epipolar plane is a plane containing the baseline, and an epipolar line is the intersection of an
+epipolar plane with the image plane (always come in corresponding pairs).
+
+When the cameras move in parallel to the image plane, then the baseline intersects the image planes at infinity, with
+epipoles at infinity, and epipolar lines parallel to the $x$ axis. So, two cameras a horizontal distance apart will have
+epipolar lines that are parallel in the direction of translation, and two corresponding epipolar lines will go through
+the same scene points.
+% section Epipolar geometry (end)
+
+
+
+
+
+\end{document}
