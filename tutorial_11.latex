@@ -1,0 +1,226 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Tutorial 11 - Colab and Video summarisation}
+\author{Gidon Rosalki}
+\date{2026-01-07}
+
+
+\begin{document}
+\maketitle
+This tutorial is very short, since it is mostly examples. I suspect that these notes will not include much.
+
+\section{Colab}\label{sec:colab} % (fold)
+Google Colab is a Jupyter style interpreter, so it runs in blocks, that need re running after change. Note that if it
+does not auto save, then check your internet connection. Google Colab offers using a GPU, which allows significantly
+faster model training and execution. This is because the GPU is designed to do thousands, if not more, of simple
+independent operations simultaneously. Unfortunately, Google only gives each student one hour per day. If you need more,
+then you can pay, but you can plausibly do it all within this limit, so start early to give you as many hours as you
+can. Some people did jump between accounts to get more hours, but this sounds like a pain. \\
+To run on the GPU you go to runtime, change runtime type, GPU, save. Files will be stored in Drive, so to mount your
+drive to access the files you perform \lstinline[columns=fixed]{from google.colab import drive} and then
+\lstinline[columns=fixed]{drive.mount("/content/gdrive")}.
+% section Colab (end)
+
+\section{Motion Segmentation}\label{sec:motion_segmentation} % (fold)
+There are many goals for motion detection: \begin{itemize}
+    \item Identify moving objects
+    \item Detection of unusual activity patterns
+    \item Computing trajectories of moving objects
+
+\end{itemize}
+Applications include: \begin{itemize}
+    \item Indoor/outdoor security
+    \item Real time crime detection
+    \item Traffic monitoring
+    \item Many intelligent video analysis systems are based on motion detection
+\end{itemize}
+Background subtraction uses a reference background image for comparison purposes, and the current image (containing
+target object) is compared to reference image pixel by pixel. Places where there are differences are detected, and
+classified as moving objects. A simple algorithm for this is as follows: \begin{enumerate}
+    \item Construct a background image $B$ as a median of a few images 
+    \item For each actual frame $I$, classify individual pixels as foreground if $\left|B - I\right| > T$ ($T$ is some
+        threshold)
+    \item Clean the noisy pixels
+\end{enumerate}
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_11_background_subtraction.png}
+    \caption{Background subtraction with noise removal example}
+\end{figure}
+In order to compute the background, instead of simply taking the median, we may use the following algorithm: \begin{gather}
+    \begin{cases}
+        B_{t + 1} \left(x, y\right) = \left(1 - \alpha\right) B_t \left(x, y\right) + \alpha I_t \left(x, y\right),
+        &\text{ if } \left(x, y\right) \text{ is \textbf{background}}\\
+        B_{t + 1} \left(x, y\right) = \left(1 - \beta\right) B_t \left(x, y\right) + \beta I_t \left(x, y\right),
+        &\text{ if } \left(x, y\right) \text{ is \textbf{foreground}}\\
+    \end{cases} \\
+    \beta \ll \alpha
+\end{gather}
+This way, if there are brightness changes, then our background changes with the brightness changes, and we do not detect
+the \textit{entire} image as moving when the brightness changes (think sun/cloud movement). As we see from the formula,
+this is applied to each pixel of the image individually, so the background is formed as an average of many different
+frames.
+
+In summary, to detect and track an object in a static scene, we model the background, and subtract to obtain an object
+mask. We filter to remove noise, and group adjacent pixels to obtain objects. We then track these objects between frames
+to develop trajectories.
+% section Motion Segmentation (end)
+
+\section{Video summarisation}\label{sec:video_summarisation} % (fold)
+The digital world contain huge amounts of recorded video. Video browsing is time consuming, which results in most of the
+captured video never being watched or examined. Video summarisation helps summarise the content of a long video into a
+compact representation, which enables us to quickly review a long video.
+
+We will discuss two methods, summarising a video into a static mosaic image, and summarising a video into a video
+synopsis. In the second option, we can have many different times represented in the same frame, and note upon them at
+what time they were there. 
+
+We can see a giant difference when there is and is not video summarisation. Finding the 7/7 bombers in 2005, and the
+Dubai assassins in 2010 took weeks, but the Boston bomber (2014), and Sinwar (2024) merely took a couple of days.
+
+\subsection{Video indexing based on mosaic representations}\label{sub:video_indexing_based_on_mosaic_representations} % (fold)
+We may represent it based on a scene: Videos contain many frames of the same scene over time
+This has high temporal redundancy. The idea is to transform a video from a sequential frame-based
+representation to a scene-based representation. \\
+The scene-based representation is based on the three
+fundamental information components of video: \begin{itemize}
+    \item Extended spatial information – appearance of the scene: Due to camera movement, the static appearance of the
+        scene can be distributed among many frames – no way to see entire scene at once. Instead it is represented as a
+        panoramic mosaic image, capturing an extended spatial view of the entire scene
+    \item Extended temporal information: motion of moving objects in the scene: The evolution of events over time is
+        distributed over frames. This is represented using the time trajectory of each moving object’s centre of mass
+    \item Geometric information: 3D scene structure, geometric transformation caused by camera motion. Here we relate
+        frames to the mosaic coordinate system
+\end{itemize}
+
+We create a static background mosaic as follows: \begin{itemize}
+    \item Align all frames in the scene to a single coordinate system
+    \item Integrate the frames to form a single static mosaic image
+    \item Remove the moving objects (e.g. temporal average or median)
+    \item Save the geometric transformation relating the different video frames to mosaic coordinates
+\end{itemize} 
+
+Moving objects are not represented in the static mosaic. To provide a summary of the events, a trajectory of each moving
+object is added on top of the static mosaic. This creates a visual summary of the entire dynamic foreground event that
+occurred in the video.
+
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_11_synopsis_mosaic.png}
+    \caption{Synopsis mosaic}
+\end{figure}
+
+% subsection Video indexing based on mosaic representations (end)
+
+\subsubsection{Nonchronological video synopsis and indexing}\label{sec:nonchronological_video_synopsis_and_indexing} % (fold)
+If we do not care that everything happens in chronological order within the video, we can have everything happen at
+once, so we can see a very compressed summary (Shmuel developed this). \\ 
+Most previous work suggested a frame based summary, where we detect key frames, show short video segments, and
+adaptively fast forward. Video synopsis proposed an \textit{object} based summary, where we simultaneously show multiple
+activities that may have originally occurred at different times. This does not include fast forwarding, instead it
+preserves the dynamics.
+
+The steps are as follows, following a two phase process: \begin{enumerate}
+    \item Online phase: Detect and track objects, and store them in a database
+    \item Query phase: According to a given user query ("30 second synopsis of the last day") select the relevant
+        objects, and stitch them into the synopsis
+\end{enumerate}
+We can call these objects \textit{tubes}, since their movement across time forms a tube of the object shape. We can then
+include objects in the result by the times of the starts and ends of these tubes. \\
+
+Video synopsis has the following properties. Let $N$ frames of an input video be represented in a 3D space time volume
+$I \left(x, y, t\right)$, where $\left(x, y\right)$ are the spatial coordinates of the pixel, and $1 \leq t \leq N$ is
+the frame number. The synopsis video $s \left(x, y, t\right)$ should have the following properties: \begin{itemize}
+    \item $s$ should be substantially shorter than the original video $I$
+    \item The maximum \enquote{activity} from the original video should appear in the synopsis
+    \item Dynamics should be preserved (objects should not be fast forwarding through the video)
+    \item Visible seams and fragmented objects should be avoided
+\end{itemize}
+
+We need to identify the interesting objects. We may say that interesting $\approx$ moving objects. Some motions are not
+interesting, like clouds and leaves, but some interesting objects, like people, can be static. Object recognition can be
+incorporated to support these issues. We start with background construction $B \left(x, y, t\right)$, including time to
+avoid the appearance change between day and night (for example), generally using a temporal median over a few minutes
+before and after frame $t$. In practice, we use a temporal histogram per pixel.
+
+To construct an activity tube, for each frame $I_t$, we create a labelling function $f_t$ such that \[
+    \forall r \in I_t,\ f_t \left(r\right) = \begin{cases}
+        1, &\text{ if foreground}\\
+        0, &\text{ if background}\\
+    \end{cases}
+\]
+The labelling function $f_t$ creates blobs. Overlapping between consecutive blobs is used to create 3D $x \times y
+\times t$ connected components called \textbf{activity tubes}. Each tube $b$ is defined over a finite time segment in
+the original video: $t_b \left[t_b ^ {s}, t_b ^ {e}\right]$. \\ 
+What we do is find $M$ that enables us to create the optimal time shift for each tube. This has the shortest video, with
+minimum collisions between objects.
+
+The length of the synopsis video is lower bounded by the length of the longest tube. This is a problem when very long
+tubes exist, so to solve this, we cut the long tube into shorter sub tubes, and display them simultaneously. This can
+result with a stereoscopic effect, where the same object appears in multiple locations.
+
+Some objects can have different lighting then the background, for example, an object caught at night, on the daytime
+background. A seamless stitching method must be added like Poisson blending. Pyramid blending works as well.
+% subsubsection Nonchronological video synopsis and indexing (end)
+% section Video summarisation (end)
+
+
+\end{document}
