@@ -207,8 +207,8 @@ It takes the \textbf{hyper-parameter} of the size of the pooling window (typical
 % section Neural Networks (end)
 
 \section{PyTorch}\label{sec:pytorch} % (fold)
-There are many deep learning frameworks, like keras, tesnorflow, PyTorch, and so on. We will be using PyTorch in this
-course. Teh API is very similar to numpy. The data, and models are loaded by default to the CPU. NN computations are
+There are many deep learning frameworks, like keras, tensorflow, PyTorch, and so on. We will be using PyTorch in this
+course. The API is very similar to numpy. The data, and models are loaded by default to the CPU. NN computations are
 very computationally expensive, and slow on the CPU, but well aimed for GPUs, so we will prefer running on the GPU,
 where computations are much faster. In PyTorch, we have to explicitly move tensors and the model to the GPU (and back to
 CPU). Datasets and Neural networks are written as classes. % TODO new slides with PyTorch, may not need the slides
