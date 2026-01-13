@@ -1,0 +1,131 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 12}
+\author{Gidon Rosalki}
+\date{2026-01-11}
+
+
+\begin{document}
+\maketitle
+
+\section{Vanishing points}\label{sec:vanishing_points} % (fold)
+\subsection{Measuring height}\label{sub:measuring_height} % (fold)
+Given an object in the scene, where we know its height, we may measure the height of the camera based off the point at
+which the object of known height meets the horizon line, and that is the height of the camera. We define
+\textit{parallel lines} to be lines that meet at the horizon. A line on the ground is any line between two points, so
+its parallel line will be any line that meets it at the horizon, and goes through another point above the horizon line. \\
+If a camera is looking up or down, it matters not, the horizon line will still be at the same point in the image, for a
+given height of the camera. 
+% subsection Measuring height (end)
+
+\subsection{Perspective}\label{sub:perspective} % (fold)
+In 3 point perspective, the vertical lines will meet at a vanishing point below the image if we are looking at it from
+above, and above the image if we are looking at it from below. The perpendicular horizontal lines will meet at the
+opposite sides of the image at their respective vanishing points. All the vertical lines will correspond to the
+\textit{same} vertical vanishing point. There was a time before perspective in art, where there is no, or little feeling
+of depth, and lines do not meet at vanishing points, they are perfectly parallel. Original images in generative AI also
+had lots of vanishing point issues, though these problems have mostly been resolved these days. By Van Gogh artists had
+started working with perspective, and vanishing points correctly.
+
+One may make use of this to change the apparent size of objects in images / drawings. For example, two things may be the
+same actual size, but if one is much closer to the vanishing points then it will appear much larger.
+% subsection Perspective (end)
+
+\subsection{Visual cues}\label{sec:visual_cues} % (fold)
+Based off things like occlusion, shading, texture, focus, highlights, shadows, and more, we can get cues about the
+location of different objects in an image. 
+
+For \textbf{depth cues}, consider occlusion. The occluding object is closer to the camera than the occluded object.
+Additionally, size, and the location of the bottom of the object can give further cues as to the location of the object.
+When one object occludes the other, we will note that there are 2 edges that continue in different directions, one
+occluded, and one continuous. We call these points \textit{T junctions} (note, they are not necessarily perpendicular),
+and they also give us clues as to occlusion and depth. \\ 
+Haze in images can also give us clues on the depth of areas. Hazier parts are almost always further away than less hazy
+parts of an image. This will be discussed further in the tutorial.
+% subsection Visual cues (end)
+% section Vanishing points (end)
+
+\section{Photometric stereo}\label{sec:photometric_stereo} % (fold)
+To do this, we firstly need to find the normal of a surface. The equation of a plane is given as \[
+    Ax + By + Cz + D = 0
+\]
+So, the surface normal is \[
+    N = \left(\displaystyle\frac{A}{C}, \displaystyle\frac{B}{C}, 1\right) = \left(p, q, 1\right)
+\]
+
+The normal of this vector is simply \[
+    n = \displaystyle\frac{N}{\left|N\right|} = \displaystyle\frac{\left(p, q, 1\right)}{\sqrt{p ^ {2} + q ^ {2} + 1} }
+\]
+The light source vector (as in, the vector from which light arrives in the scene), is as follows: \begin{gather}
+    S = \left(\displaystyle\frac{X}{Z}, \displaystyle\frac{Y}{Z}, 1\right) \\ 
+    s = \displaystyle\frac{S}{\left|S\right|} = \displaystyle\frac{\left(p_S, q_S, 1\right)}{\sqrt{p_S ^ {2} + q_S ^ {2}
+    + 1} }
+\end{gather}
+So, the cos of the angle between them is given by \[
+    \cos \theta_i = n \cdot s = \displaystyle\frac{\left(pp_S + qq_S + 1\right)}{\sqrt{p ^ {2} + q ^ {2} + 1} \sqrt{p_S
+    ^ {2} + q_S ^ {2} + 1} }
+\]
+
+The plane at $z = 1$ is called the gradient space (pq plane), and every point in it corresponds to a particular surface
+orientation.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_12_gradient_space.png}
+    \caption{Gradient space}
+\end{figure}
+
+The \textbf{reflectance map} relates image irradiance $I \left(x, y\right)$ to surface orientation $\left(p, q\right)$
+for a given light source direction, and surface reflectance. The Lambertian reflectance model, for matte / diffuse
+targets takes \begin{gather}
+    k = \text{ Light source brightness} \\
+    \rho = \text{ Surface albedo (reflectance)} \\
+    c = \text{ Constant (optical system)} \\
+\end{gather}
+So the image irradiance is given as \[
+    I = \rho k c \cos \theta_i = \rho k c n \cdot s
+\]
+If we let $\rho k c = 1$ then $I = \cos theta_i = n \cdot s$. We may state that these values are approximately equal,
+where $\theta$ is the angle between the light source, and the surface normal. $I$ does not depend on the viewing
+direction $V$.
+
+There are 3 main simple reflectance models. Diffuse models assume that an inbound light ray is sent in every direction.
+Glossy models send the light in mostly the same direction, and in mirror, then the angle of incidence is equal to the
+angle of reflection.
+% section Photometric stereo (end)
+
+
+\end{document}
