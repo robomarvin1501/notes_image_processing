@@ -125,6 +125,93 @@ direction $V$.
 There are 3 main simple reflectance models. Diffuse models assume that an inbound light ray is sent in every direction.
 Glossy models send the light in mostly the same direction, and in mirror, then the angle of incidence is equal to the
 angle of reflection.
+
+From this calculated $I$, we can create the \textit{reflectance map} $R \left(p, q\right)$, with $p$ on the $x$ axis,
+where $R \left(p, q\right)$ is at a maximum when $\left(p, q\right) = \left(p_S, q_S\right)$. 
+
+Now, to create photometric stereo, we can take multiple images, each from a different light source direction. The points
+where the lines cross is a shared point in the image, from multiple different perspectives. 
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{lecture_12_photometric_stereo.png}
+    \caption{}
+\end{figure}
+Note that this means that photometric stereo does not work outside, since we cannot trivially move the position of the
+sun, and there are often many light sources outside, thanks to reflections. This method only works if we can control the
+light source, and ensure that there is only one, that we can move.
+
+To perform Lambertian photometric stereo, then $I = \rho k c \cos \theta_i = \rho n \cdot s$, we have 3 image radiances:
+\begin{gather}
+    I_1 = \rho n \cdot s_1 \\
+    I_1 = \rho n \cdot s_2 \\
+    I_1 = \rho n \cdot s_3 \\
+\end{gather}
+We can write this as the matrix equation \begin{gather}
+    \begin{bmatrix}
+        I_1 \\
+        I_2 \\
+        I_3 \\
+    \end{bmatrix} =  \begin{bmatrix}
+        s_1 ^ {T} \\
+        s_2 ^ {T} \\
+        s_3 ^ {T} \\
+    \end{bmatrix} \rho n
+\end{gather}
+Which we can now solve. $I$ is a 3 by 1 matrix, $S$ a 3 by 3, and $\widetilde{n} = \rho n$ is a 3 by 1. \begin{gather}
+    \widetilde{n} = S ^ {-1} I \\
+    \rho = \left|\widetilde{n}\right| \\ 
+    n = \displaystyle\frac{\widetilde{n}}{\left|\widetilde{n}\right|} = \displaystyle\frac{\widetilde{n}}{\rho}
+\end{gather}
+
+We can compute the light source direction by placing a chrome sphere in the scene, and the location of the highlight is
+the direction of the light source. 
+
+\subsection{Normal map vs depth map}\label{sub:normal_map_vs_depth_map} % (fold)
+We have taken every point on the surface, and found its normal as a point on a plane that is above. We want to recreate
+the original shape from this plane. We can determine the depth map from the normal map by integrating over gradients $p,
+q$ across the image. A normal map that produces a unique depth map, that is independent of the image plane direction
+that is used to sum over the gradients is called \textit{integrable}. Integrability is enforced when the following
+condition holds: \[
+    \displaystyle\frac{\partial p}{\partial y} = \displaystyle\frac{\partial q}{\partial x}  
+\]
+The Penrose staircase violates integrability.
+
+By taking many images under varying illuminations, we can reconstruct the x gradient, and y gradient images. From here,
+via 2D integration, we can recover the reconstructed shape. This is done by estimating the derivatives of the surface
+\begin{gather}
+    \widehat{p} \left(x, y\right) = \displaystyle\frac{\left(z \left(x + 1, y\right) - z \left(x 0 1,
+    y\right)\right)}{2} \\
+    \widehat{q} \left(x, y\right) = \displaystyle\frac{\left(z \left(x, y + 1\right) - z \left(x, y - 1\right)\right)}{2}
+\end{gather}
+Represented as a matrix multiplication. From here, we find $z \left(x, y\right)$ that minimises \[
+    E = \displaystyle\sum_{x, y}^{}\left(\left(\widehat{p} \left(x, y\right) - p \left(x, y\right)\right) ^ {2} +
+    \left(\widehat{q} \left(x, y\right) - q \left(x, y\right)\right) ^ {2}\right)
+\]
+Using the pseudo inverse, since there are 1 million unknowns for a 1K by 1K image. \\ 
+
+There are some serious limitations of photometric stereo. It does not work for shiny / colourful / semi translucent
+surfaces, and has problems with shadows, and inter reflections (ie, non convex objects). Additionally, the camera, and
+lights have to be distant, and there are calibration requirements, of measuring the light source directions, and
+intensities, along with the camera response function.
+% subsection Normal map vs depth map (end)
+
+\subsection{Shape from shading}\label{sub:shape_from_shading} % (fold)
+Here we are asking, given a \textbf{single} image of an object, with known surface reflectance, taken under a known
+light source, can we recover the shape of the object? This is equivalent to saying, given $R \left(p, q\right)$,
+$\left(p_S, q_S\right)$, and surface reflectance, can we determine $\left(p, q\right)$ \textit{uniquely} for each image
+point? In short, no. There is no unique solution given this. \\ 
+We may add \textit{smoothness constraints} to help here, where we assume that the surface orientation $\left(p,
+q\right)$ is similar at neighbouring points. So we want to minimise \[
+    \displaystyle\int_{}^{}\displaystyle\int_{}^{}\left(p_x ^ {2} + p_y ^ {2} + q_x ^ {2} + q_y ^ {2}\right) + \lambda
+    \left(I \left(x, y\right) - R \left(p, q\right)\right) ^ {2} dx dy
+\]
+The first term is the smoothness term, and the second the data term. We want to minimise the sum of square derivatives
+of $p$ and $q$, and so add a penalty for a rapid change in $p$ and $q$. Note that this involves the first, and second
+derivatives of $z$. 
+
+We should also note that if we can see the edges of a shape, then we know what its normals are, and can resolve the
+issue that way. 
+% subsection Shape from shading (end)
 % section Photometric stereo (end)
 
 
