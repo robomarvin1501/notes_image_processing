@@ -42,8 +42,7 @@
 \begin{document}
 \maketitle
 
-\section{Restoration}\label{sec:restoration} % (fold)
-\subsection{Radon}\label{sub:radon} % (fold)
+\section{Radon}\label{sub:radon} % (fold)
 To look inside someone's head, we could break it open, but we would prefer a non destructive method. The Radon Transform
 is essential for understanding multi dimensional structures (2D or 3D objects), but can only acquire its projections
 from lower-dimensional data (like 1D line integrals). \\ 
@@ -69,7 +68,7 @@ this signal, which will create a line through a central slice of the entire DFT 
 directions, then we have many lines through central slices of the DFT. We can then perform 2D-IDFT on the resultant DFT,
 and get back a blurred image of the actual shape (since there are many gaps in the lower frequencies of the DFT image). 
 
-\subsubsection{Filtered Back Projection}\label{sec:filtered_back_projection} % (fold)
+\subsection{Filtered Back Projection}\label{sec:filtered_back_projection} % (fold)
 We will note that the distance between the outer edges of the lines in the DFT image increases linearly, since the size
 of a circle increases linearly. Let us define, for a given frequency (slice) $w$ \begin{gather}
     H \left(\omega\right)= \left|\omega\right| \\ 
@@ -80,7 +79,7 @@ The resolution lowers if we have gaps too large between the angles of the sample
 % subsubsection Filtered Back Projection (end)
 % subsection Radon (end)
 
-\subsection{Haze}\label{sub:haze} % (fold)
+\section{Haze Removal}\label{sub:haze} % (fold)
 Our aim is to remove haze from an image.
 \begin{figure}[H]
     \center
@@ -138,7 +137,34 @@ then from the dark channel of a single pixel, we may compute $\beta$, and then w
 in the image. From there, since we have assumed $A$ to be constant across the image, we may reconstruct the original
 image $J$.
 % subsection Haze (end)
-\subsection{Super resolution}\label{sub:super_resolution} % (fold)
+
+\section{Multi Frame Super resolution}\label{sub:super_resolution} % (fold)
+Given a set of low quality images, where each image is offset by a fraction of a pixel relative to the others, we can
+fuse these together into a higher resolution image. 
+
+We would like to get a uniform sampling, with sampling distance $\leq D$. Due to our limited camera resolution, we have
+sampled using a grid with distance $2D$. If we take 4 images, each a distance of $D$ apart, to the right, below, and
+then to the left, we may interlace the four images to get the desired resolution image. \\ 
+Note that we have no guarantee of the pixel offsets, that they will be exactly the amount, or the distance that we
+desire. They could be in the wrong directions, and even the wrong distances. There may even be rotations present. 
+
+We can assume that the observed low resolution images $Y_i$ are generated from the high resolution image $X$ by
+translating, blurring, and sampling. Given the low resolution images $Y_i$, we look for the high resolution image $X$,
+which has the simulated projection $P_i \left(X\right)$ that are closest to $Y_i$: \[
+    E \left(X\right) = \displaystyle\sum_{i = 1}^{N} \left|\left|P_i \left(X\right) - Y_i\right|\right| ^ {2}
+\]
+Where $P_i$ is the simulated known projection of image $X$ onto the grid of the image $Y_i$. We may then compute $P_i$
+by motion analysis.
+
+Steps: \begin{enumerate}
+    \item Calculate the sub pixel motion between the low resolution images $Y_i$ (You may use Lucas-Kanade for this)
+    \item Initial guess for the high resolution image $X$ could be, for example, the average of all the aligned and
+        enlarged low resolution images $Y_i$
+    \item For each $Y_i$ perform the back projection process: \begin{enumerate}
+        \item Compute the projection error $P_i \left(X\right) - Y_i$ ($P_i$ is the transformation for $Y_i$)
+        \item Change the pixel values of $X$ to minimise the above error by back projecting the error
+    \end{enumerate}
+\end{enumerate}
 
 % subsection Super resolution (end)
 
