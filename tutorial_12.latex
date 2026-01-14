@@ -1,0 +1,149 @@
+\documentclass[a4paper]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{blindtext}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{bookmark}
+\usepackage{bbm}
+\usepackage{wrapfig}
+\usepackage{tabularx}
+\usepackage[autostyle=true]{csquotes}
+\graphicspath{ {./images/} }
+\usepackage[bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\p}{\ensuremath{\mathbb{P}}}
+\newcommand{\E}{\ensuremath{\mathbb{E}}}
+\newcommand{\F}{\ensuremath{\mathcal{F}}}
+\newcommand{\1}{\ensuremath{\mathbbm{1}}}
+\newcommand{\B}{\ensuremath{\mathbbm{B}}}
+
+\title{Lecture 13}
+\author{Gidon Rosalki}
+\date{2026-01-14}
+
+
+\begin{document}
+\maketitle
+
+\section{Restoration}\label{sec:restoration} % (fold)
+\subsection{Radon}\label{sub:radon} % (fold)
+To look inside someone's head, we could break it open, but we would prefer a non destructive method. The Radon Transform
+is essential for understanding multi dimensional structures (2D or 3D objects), but can only acquire its projections
+from lower-dimensional data (like 1D line integrals). \\ 
+For example, in medical imaging (CT scans), we wish to reconstruct detailed internal images of the human body using only
+X-ray projections taken from various angles. \\
+Line integral projections involve integrating an object along lines at different angles, illustrating how the function
+changes across specific directions. Consider this as taking lower dimensional projections of the objects in different
+directions, and observing the projections. The different direction projections give information about the higher
+dimensional object.
+
+To perform the transform, we take the area $t$, and perform the line integral of each part, given as $Q$: \[
+    Q = \displaystyle\prod_{\left(i, j\right) \in \text{line}}^{}t \left(i, j\right)
+\]
+If we let \[
+    l \left(i, j\right) = \log \left(t \left(i, j\right)\right)
+\]
+So \[
+    \log \left(Q\right) = \displaystyle\sum_{\left(i, j\right) \in \text{line}}^{}l \left(i, j\right)
+\]
+
+When we have a projection in a given direction, this is effectively a signal. We may take the 1D Fourier transform of
+this signal, which will create a line through a central slice of the entire DFT image. If we do this for many
+directions, then we have many lines through central slices of the DFT. We can then perform 2D-IDFT on the resultant DFT,
+and get back a blurred image of the actual shape (since there are many gaps in the lower frequencies of the DFT image). 
+
+\subsubsection{Filtered Back Projection}\label{sec:filtered_back_projection} % (fold)
+We will note that the distance between the outer edges of the lines in the DFT image increases linearly, since the size
+of a circle increases linearly. Let us define, for a given frequency (slice) $w$ \begin{gather}
+    H \left(\omega\right)= \left|\omega\right| \\ 
+    \widehat{F} \left(\omega\right) = H \left(\omega\right) F \left(\omega\right) = \left|w\right| F \left(\omega\right)
+\end{gather}
+% TODO Missed some stuff around 1032
+The resolution lowers if we have gaps too large between the angles of the samples.
+% subsubsection Filtered Back Projection (end)
+% subsection Radon (end)
+
+\subsection{Haze}\label{sub:haze} % (fold)
+Our aim is to remove haze from an image.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_12_haze.png}
+    \caption{Example}
+\end{figure}
+
+In computer vision, we often rely on prior knowledge about the world, referred to as a \enquote{prior}. For this
+problem, we will utilise the \textit{dark channel prior}. This means that if we have an image without haze, then our
+dark channel will be very low, but a hazy image will have a strong dark channel. \\ 
+The dark channel is defined as \[
+    \displaystyle\min_{} \left\{\text{RGB on a local patch}\right\} 
+\]
+Or more mathematically: \[
+    J ^ {\text{dark}} \left(x\right) = \displaystyle\min_{y \in W \left(x\right)} \left\{\displaystyle\min_{c \in
+    \left\{R, G, B\right\}} \left\{J ^ {c} \left(y\right)\right\} \right\} 
+\]
+So for example, we take 15 by 15 patches, and the value of each patch will be the minimum value of all the reds, greens,
+and blues, in that patch.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_12_dark_channel_explained}
+    \caption{The image, the minimum RGB for each pixel, the dark channel}
+\end{figure}
+
+It was found (heuristically) that for haze free images, 86\% of the pixels of the dark channel will be in $\left[0,
+16\right]$. Almost all the pixel intensities of the dark channel are incredibly low, when the image is haze free. It is
+dark since in images there is lots of shade, and shade is dark, and also there are often lots of colourful objects,
+which will have a channel which is very dominant, but will also have a channel with a very low value, so the dark
+channel becomes dark.
+
+However, if you take the dark channel of a hazy image (we are only dealing with white haze), then the dark channel is no
+longer dark.
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_12_hazy_dark_channel.png}
+    \caption{Hazy image, and dark channel}
+\end{figure}
+
+In order to restore, we will assume that the atmosphere is either white, or a shade of grey that is very close to white.
+Let us define $I$ to be the hazy image, $J$ to be the scene without haze, $t$ to be the transmission, and $A$ is the
+haze / atmospheric light. \[
+    I = J \cdot t + A \cdot \left(1 - t\right)
+\]
+\begin{figure}[H]
+    \center
+    \includegraphics[scale=0.2]{tutorial_12_restoration.png}
+\end{figure}
+
+We may compute $t$ (which is functionally the \textbf{depth} of the image, so $1 - t$ is the dark channel) by the function \[
+    t \left(x\right) = e ^ {- \beta d \left(x\right)}
+\]
+Where $d$ is the depth. We do not need the depth for every pixel, just one, since we may compute the dark channel, and
+then from the dark channel of a single pixel, we may compute $\beta$, and then we can compute the depth for every pixel
+in the image. From there, since we have assumed $A$ to be constant across the image, we may reconstruct the original
+image $J$.
+% subsection Haze (end)
+\subsection{Super resolution}\label{sub:super_resolution} % (fold)
+
+% subsection Super resolution (end)
+
+
+% section Restoration (end)
+
+
+\end{document}
